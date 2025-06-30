@@ -1,0 +1,16 @@
+{
+  "body": {
+    "files": [
+      {
+        "fileName": "doc1.pdf",
+        "contentType": "application/pdf",
+        "base64": "JVBERi0xLjMKJ... (truncated)"
+      },
+      {
+        "fileName": "image1.jpg",
+        "contentType": "image/jpeg",
+        "base64": "/9j/4AAQSkZJR... (truncated)"
+      }
+    ]
+  }
+} 
