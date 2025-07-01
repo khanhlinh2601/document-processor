@@ -1,0 +1,162 @@
+{
+  "version": "44.0.0",
+  "artifacts": {
+    "DocumentProcessorStack.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "DocumentProcessorStack.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "DocumentProcessorStack": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://unknown-account/unknown-region",
+      "properties": {
+        "templateFile": "DocumentProcessorStack.template.json",
+        "terminationProtection": false,
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/2094221d28a6365d3f3cca09f3758082e382a9386262369d0f3dbec91afc86b6.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "DocumentProcessorStack.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-lookup-role-${AWS::AccountId}-${AWS::Region}",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "DocumentProcessorStack.assets"
+      ],
+      "metadata": {
+        "/DocumentProcessorStack/DocumentStorage/DocumentBucket/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentStorageDocumentBucket03F69AFE"
+          }
+        ],
+        "/DocumentProcessorStack/UploadHandler/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UploadHandlerServiceRole8CD4AA9A"
+          }
+        ],
+        "/DocumentProcessorStack/UploadHandler/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UploadHandlerServiceRoleDefaultPolicy63BF30CF"
+          }
+        ],
+        "/DocumentProcessorStack/UploadHandler/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UploadHandler4CB020C5"
+          }
+        ],
+        "/DocumentProcessorStack/ApiGateway/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiGateway11E7F47B"
+          }
+        ],
+        "/DocumentProcessorStack/ApiGateway/CloudWatchRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiGatewayCloudWatchRoleA41EF9FE"
+          }
+        ],
+        "/DocumentProcessorStack/ApiGateway/Account": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiGatewayAccountBC7F34C1"
+          }
+        ],
+        "/DocumentProcessorStack/ApiGateway/Deployment/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiGatewayDeploymentA26796E87af7c17209d359dd805c120adb5251fd"
+          }
+        ],
+        "/DocumentProcessorStack/ApiGateway/DeploymentStage.prod/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiGatewayDeploymentStageprod1C6D5CD6"
+          }
+        ],
+        "/DocumentProcessorStack/ApiGateway/Endpoint": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiGatewayEndpoint5AA8EC3A"
+          }
+        ],
+        "/DocumentProcessorStack/ApiGateway/Default/upload/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiGatewayupload68601BDD"
+          }
+        ],
+        "/DocumentProcessorStack/ApiGateway/Default/upload/POST/ApiPermission.DocumentProcessorStackApiGateway6D26C249.POST..upload": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiGatewayuploadPOSTApiPermissionDocumentProcessorStackApiGateway6D26C249POSTuploadC2ED4BA4"
+          }
+        ],
+        "/DocumentProcessorStack/ApiGateway/Default/upload/POST/ApiPermission.Test.DocumentProcessorStackApiGateway6D26C249.POST..upload": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiGatewayuploadPOSTApiPermissionTestDocumentProcessorStackApiGateway6D26C249POSTupload39D71655"
+          }
+        ],
+        "/DocumentProcessorStack/ApiGateway/Default/upload/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiGatewayuploadPOSTC7BBEC8C"
+          }
+        ],
+        "/DocumentProcessorStack/ApiURL": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiURL"
+          }
+        ],
+        "/DocumentProcessorStack/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/DocumentProcessorStack/CDKMetadata/Condition": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadataAvailable"
+          }
+        ],
+        "/DocumentProcessorStack/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/DocumentProcessorStack/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "DocumentProcessorStack"
+    },
+    "Tree": {
+      "type": "cdk:tree",
+      "properties": {
+        "file": "tree.json"
+      }
+    }
+  },
+  "minimumCliVersion": "2.1019.2"
+}

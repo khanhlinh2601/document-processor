@@ -1,0 +1,34 @@
+{
+  "version": "44.0.0",
+  "files": {
+    "35ebded57946b83786925ca71ab9ed3ccc666ba31c8b0deb48def54078448d7c": {
+      "displayName": "UploadHandler/Code",
+      "source": {
+        "path": "/home/trinhkhanhlinh/Documents/learn/document-processor",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "35ebded57946b83786925ca71ab9ed3ccc666ba31c8b0deb48def54078448d7c.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "2094221d28a6365d3f3cca09f3758082e382a9386262369d0f3dbec91afc86b6": {
+      "displayName": "DocumentProcessorStack Template",
+      "source": {
+        "path": "DocumentProcessorStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "2094221d28a6365d3f3cca09f3758082e382a9386262369d0f3dbec91afc86b6.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
