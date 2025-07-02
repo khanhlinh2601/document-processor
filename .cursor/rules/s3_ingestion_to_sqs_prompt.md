@@ -9,7 +9,7 @@ Implement a clean, modular Lambda function in **TypeScript** that listens to **S
 
 ## 🧱 Architecture
 
-### Lambda: Ingestion Trigger (Step 2)
+### Lambda: Ingestion Trigger (Step 1)
 
 - Triggered automatically by **S3 Event Notification** on `ObjectCreated`.
 - Reads object metadata (bucket name, key, etc.).
@@ -19,7 +19,7 @@ Implement a clean, modular Lambda function in **TypeScript** that listens to **S
   - Timestamp
   - Any other relevant metadata
 
-### Amazon SQS (Step 3)
+### Amazon SQS (Step 2)
 
 - Receives messages from the ingestion Lambda.
 - (Optional) Additional Lambdas or workers will consume these messages downstream.
@@ -38,30 +38,6 @@ Implement a clean, modular Lambda function in **TypeScript** that listens to **S
 ---
 
 ## 🧱 Project Structure
-
-```
-src/
-├── main.ts                        # Lambda entry point
-├── app.module.ts                 # Root module
-├── config/
-│   └── aws.config.ts
-├── interfaces/
-│   └── s3-event.handler.ts       # Handles S3 event trigger
-├── application/
-│   └── ingestion.service.ts      # Business logic to send messages to SQS
-├── domain/
-│   └── models/file.entity.ts
-├── infrastructure/
-│   ├── s3/s3.service.ts          # (optional: to get object metadata)
-│   └── sqs/sqs.service.ts        # SQS messaging logic
-└── shared/
-    ├── dtos/
-    │   └── ingestion.dto.ts
-    ├── utils/
-    │   └── s3-event.util.ts
-    └── event-samples/
-        └── s3-event.json
-```
 
 ---
 

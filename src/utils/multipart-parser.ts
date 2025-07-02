@@ -1,7 +1,10 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { UploadedFile } from '../services/s3upload.service';
+import { Logger } from './logger';
 
 export class MultipartParser {
+  private static logger = new Logger('MultipartParser');
+
   /**
    * Parse multipart/form-data from API Gateway event
    * 
@@ -10,17 +13,22 @@ export class MultipartParser {
    */
   static async parse(event: APIGatewayProxyEvent): Promise<UploadedFile[]> {
     if (!event.body) {
+      this.logger.error('Request body is empty');
       throw new Error('Request body is empty');
     }
 
     if (!event.headers['content-type']?.includes('multipart/form-data')) {
+      this.logger.error('Invalid content type', { contentType: event.headers['content-type'] });
       throw new Error('Content-Type must be multipart/form-data');
     }
 
     const boundary = this.extractBoundary(event.headers['content-type']);
     if (!boundary) {
+      this.logger.error('Boundary not found in Content-Type header');
       throw new Error('Boundary not found in Content-Type header');
     }
+
+    this.logger.debug('Parsing multipart/form-data', { boundary });
 
     // Decode the base64 body if it's base64 encoded
     const body = event.isBase64Encoded 
@@ -28,6 +36,8 @@ export class MultipartParser {
       : event.body;
 
     const parts = this.getParts(body, boundary);
+    this.logger.debug(`Found ${parts.length} parts in request`);
+    
     const files: UploadedFile[] = [];
 
     for (const part of parts) {
@@ -40,6 +50,13 @@ export class MultipartParser {
         const contentType = headers['content-type'] || 'application/octet-stream';
         const buffer = Buffer.from(content, 'binary');
 
+        this.logger.debug(`Parsed file from request`, { 
+          fieldname, 
+          filename, 
+          contentType, 
+          size: buffer.length 
+        });
+
         files.push({
           fieldname,
           originalname: filename,
@@ -50,6 +67,7 @@ export class MultipartParser {
       }
     }
 
+    this.logger.info(`Successfully parsed ${files.length} files from request`);
     return files;
   }
 

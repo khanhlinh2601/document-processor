@@ -18,7 +18,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/2094221d28a6365d3f3cca09f3758082e382a9386262369d0f3dbec91afc86b6.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/d4f1063059f6c4c3eb64a0a7500af07fbfa00bb2f531d0856d73a977d927e2a3.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -40,6 +40,30 @@
             "data": "DocumentStorageDocumentBucket03F69AFE"
           }
         ],
+        "/DocumentProcessorStack/DocumentStorage/DocumentBucket/Notifications/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentStorageDocumentBucketNotificationsE387C201"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentStorage/DocumentBucket/AllowBucketNotificationsToDocumentProcessorStackS3EventHandler32E152AB": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentStorageDocumentBucketAllowBucketNotificationsToDocumentProcessorStackS3EventHandler32E152ABC3B21B33"
+          }
+        ],
+        "/DocumentProcessorStack/IngestionQueue/DeadLetterQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IngestionQueueDeadLetterQueue5AA5A009"
+          }
+        ],
+        "/DocumentProcessorStack/IngestionQueue/Queue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IngestionQueue781421A8"
+          }
+        ],
         "/DocumentProcessorStack/UploadHandler/ServiceRole/Resource": [
           {
             "type": "aws:cdk:logicalId",
@@ -56,6 +80,66 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "UploadHandler4CB020C5"
+          }
+        ],
+        "/DocumentProcessorStack/S3EventHandler/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "S3EventHandlerServiceRoleC74773D4"
+          }
+        ],
+        "/DocumentProcessorStack/S3EventHandler/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "S3EventHandlerServiceRoleDefaultPolicy39CDCBBB"
+          }
+        ],
+        "/DocumentProcessorStack/S3EventHandler/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "S3EventHandlerBAFC08A8"
+          }
+        ],
+        "/DocumentProcessorStack/SQSConsumerHandler/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SQSConsumerHandlerServiceRole99E01B5D"
+          }
+        ],
+        "/DocumentProcessorStack/SQSConsumerHandler/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SQSConsumerHandlerServiceRoleDefaultPolicy0B474BB7"
+          }
+        ],
+        "/DocumentProcessorStack/SQSConsumerHandler/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SQSConsumerHandlerCD65C00A"
+          }
+        ],
+        "/DocumentProcessorStack/SQSConsumerHandler/SqsEventSource:DocumentProcessorStackIngestionQueue6CECB688/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SQSConsumerHandlerSqsEventSourceDocumentProcessorStackIngestionQueue6CECB6886F1E91CE"
+          }
+        ],
+        "/DocumentProcessorStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+          }
+        ],
+        "/DocumentProcessorStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36"
+          }
+        ],
+        "/DocumentProcessorStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691"
           }
         ],
         "/DocumentProcessorStack/ApiGateway/Resource": [
@@ -122,6 +206,24 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "ApiURL"
+          }
+        ],
+        "/DocumentProcessorStack/BucketName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BucketName"
+          }
+        ],
+        "/DocumentProcessorStack/QueueUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "QueueUrl"
+          }
+        ],
+        "/DocumentProcessorStack/DeadLetterQueueUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DeadLetterQueueUrl"
           }
         ],
         "/DocumentProcessorStack/CDKMetadata/Default": [

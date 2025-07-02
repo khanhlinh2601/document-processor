@@ -1,4 +1,108 @@
-# Document Processor (NestJS Clean Architecture for AWS Lambda)
+# Document Processor
+
+A serverless document processing pipeline built with AWS CDK, Lambda, S3, and SQS.
+
+## Architecture
+
+This project implements a complete serverless document processing pipeline:
+
+1. **Upload API**: API Gateway + Lambda for uploading documents to S3
+2. **S3 Trigger**: Lambda function triggered by S3 events that sends messages to SQS
+3. **Processing Queue**: SQS queue for document processing tasks
+4. **Consumer**: Lambda function that processes messages from the SQS queue
+
+## Prerequisites
+
+- Node.js 18.x or later
+- AWS CLI configured with appropriate credentials
+- AWS CDK v2 installed (`npm install -g aws-cdk`)
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Build the TypeScript code:
+
+```bash
+npm run build
+```
+
+3. Bootstrap your AWS environment (if you haven't already):
+
+```bash
+cdk bootstrap
+```
+
+## Deployment
+
+Deploy the entire stack:
+
+```bash
+cdk deploy
+```
+
+After deployment, the CDK will output:
+- API URL for document uploads
+- S3 bucket name for document storage
+- SQS queue URL for document ingestion
+- Dead letter queue URL for failed messages
+
+## Testing the Pipeline
+
+1. Upload a document using the API:
+
+```bash
+curl -X POST \
+  -F "file=@/path/to/your/document.pdf" \
+  https://your-api-id.execute-api.region.amazonaws.com/prod/upload
+```
+
+2. The document will be stored in S3, triggering the S3 event Lambda
+3. The S3 event Lambda will send a message to SQS
+4. The SQS consumer Lambda will process the message
+
+## Monitoring
+
+You can monitor the pipeline using AWS CloudWatch:
+
+- Lambda function logs
+- SQS metrics
+- S3 bucket metrics
+
+## Clean Up
+
+To remove all resources:
+
+```bash
+cdk destroy
+```
+
+## Development
+
+### Project Structure
+
+- `bin/` - CDK app entry point
+- `lib/` - CDK stack definition
+- `src/` - Application code
+  - `handlers/` - Lambda function handlers
+  - `services/` - Business logic
+  - `models/` - Data models
+  - `utils/` - Utilities
+  - `infrastructure/` - Infrastructure constructs
+
+### Adding a New Lambda Function
+
+1. Create a new handler in `src/handlers/`
+2. Add the Lambda to the stack in `lib/document-processor-stack.ts`
+3. Configure appropriate permissions and event sources
+
+---
+
+# Original Documentation
 
 ## Project Structure
 

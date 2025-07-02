@@ -1,7 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { logger } from '../utils/logger';
+import { Logger } from '../utils/logger';
 import { S3UploadService } from '../services/s3upload.service';
 import { MultipartParser } from '../utils/multipart-parser';
+
+// Initialize logger
+const logger = new Logger('UploadHandler');
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -11,15 +14,20 @@ export const handler = async (
     const files = await MultipartParser.parse(event);
     
     if (files.length === 0) {
+      logger.warn('No files were uploaded');
       return {
         statusCode: 400,
         body: JSON.stringify({ message: 'No files were uploaded' }),
       };
     }
     
+    logger.info(`Processing ${files.length} file(s) for upload`);
+    
     // Upload files to S3
     const uploadService = new S3UploadService();
     const uploadResults = await uploadService.uploadFiles(files);
+    
+    logger.info(`Successfully uploaded ${files.length} file(s)`);
     
     // Return uploaded file URLs
     return {
