@@ -1,5 +1,7 @@
-import { S3Client, PutObjectCommand, PutObjectCommandInput } from '@aws-sdk/client-s3';
-import { Logger } from '../utils/logger';
+import { PutObjectCommand, PutObjectCommandInput } from '@aws-sdk/client-s3';
+import { Logger } from '../../shared/logger/logger';
+import { s3Client } from '../clients/s3-client';
+import { environment } from '../../shared/config/environment';
 
 export interface UploadedFile {
   fieldname: string;
@@ -16,21 +18,18 @@ export interface UploadResult {
 }
 
 export class S3UploadService {
-  private s3Client: S3Client;
   private bucketName: string;
   private region: string;
   private logger: Logger;
 
   constructor() {
-    this.region = process.env.AWS_REGION || 'us-east-1';
+    this.region = environment.aws.region;
     this.bucketName = process.env.S3_BUCKET_NAME || '';
     this.logger = new Logger('S3UploadService');
     
     if (!this.bucketName) {
       throw new Error('S3_BUCKET_NAME environment variable is not set');
     }
-    
-    this.s3Client = new S3Client({ region: this.region });
   }
 
   async uploadFile(file: UploadedFile): Promise<UploadResult> {
@@ -49,7 +48,7 @@ export class S3UploadService {
       ContentType: file.mimetype,
     };
     
-    await this.s3Client.send(new PutObjectCommand(params));
+    await s3Client.send(new PutObjectCommand(params));
     
     this.logger.info(`Successfully uploaded file: ${file.originalname}`, { key });
     

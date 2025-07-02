@@ -58,7 +58,7 @@
        ],
        "LambdaFunctionArn": {
         "Fn::GetAtt": [
-         "S3EventHandlerBAFC08A8",
+         "DocumentHandlersS3EventFunctionCBECE6DE",
          "Arn"
         ]
        }
@@ -69,19 +69,19 @@
     "SkipDestinationValidation": false
    },
    "DependsOn": [
-    "DocumentStorageDocumentBucketAllowBucketNotificationsToDocumentProcessorStackS3EventHandler32E152ABC3B21B33"
+    "DocumentStorageDocumentBucketAllowBucketNotificationsToDocumentProcessorStackDocumentHandlersS3EventFunction0FDAF2B33AA9B017"
    ],
    "Metadata": {
     "aws:cdk:path": "DocumentProcessorStack/DocumentStorage/DocumentBucket/Notifications/Resource"
    }
   },
-  "DocumentStorageDocumentBucketAllowBucketNotificationsToDocumentProcessorStackS3EventHandler32E152ABC3B21B33": {
+  "DocumentStorageDocumentBucketAllowBucketNotificationsToDocumentProcessorStackDocumentHandlersS3EventFunction0FDAF2B33AA9B017": {
    "Type": "AWS::Lambda::Permission",
    "Properties": {
     "Action": "lambda:InvokeFunction",
     "FunctionName": {
      "Fn::GetAtt": [
-      "S3EventHandlerBAFC08A8",
+      "DocumentHandlersS3EventFunctionCBECE6DE",
       "Arn"
      ]
     },
@@ -97,14 +97,94 @@
     }
    },
    "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/DocumentStorage/DocumentBucket/AllowBucketNotificationsToDocumentProcessorStackS3EventHandler32E152AB"
+    "aws:cdk:path": "DocumentProcessorStack/DocumentStorage/DocumentBucket/AllowBucketNotificationsToDocumentProcessorStackDocumentHandlersS3EventFunction0FDAF2B3"
+   }
+  },
+  "DocumentMetadataTable1D124EF4": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "documentId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "timestamp",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "bucket",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "key",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "status",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "BucketKeyIndex",
+      "KeySchema": [
+       {
+        "AttributeName": "bucket",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "key",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     },
+     {
+      "IndexName": "StatusIndex",
+      "KeySchema": [
+       {
+        "AttributeName": "status",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "timestamp",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "documentId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "timestamp",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "DocumentMetadata-1751454821294"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentMetadataTable/DocumentMetadataTable/Resource"
    }
   },
   "IngestionQueueDeadLetterQueue5AA5A009": {
    "Type": "AWS::SQS::Queue",
    "Properties": {
     "MessageRetentionPeriod": 1209600,
-    "QueueName": "document-ingestion-queue-dlq",
     "SqsManagedSseEnabled": true
    },
    "UpdateReplacePolicy": "Delete",
@@ -117,7 +197,6 @@
    "Type": "AWS::SQS::Queue",
    "Properties": {
     "MessageRetentionPeriod": 345600,
-    "QueueName": "document-ingestion-queue",
     "RedrivePolicy": {
      "deadLetterTargetArn": {
       "Fn::GetAtt": [
@@ -128,7 +207,7 @@
      "maxReceiveCount": 3
     },
     "SqsManagedSseEnabled": true,
-    "VisibilityTimeout": 60
+    "VisibilityTimeout": 30
    },
    "UpdateReplacePolicy": "Delete",
    "DeletionPolicy": "Delete",
@@ -136,7 +215,7 @@
     "aws:cdk:path": "DocumentProcessorStack/IngestionQueue/Queue/Resource"
    }
   },
-  "UploadHandlerServiceRole8CD4AA9A": {
+  "DocumentProcessorSQSConsumerFunctionServiceRole7DFEBA4C": {
    "Type": "AWS::IAM::Role",
    "Properties": {
     "AssumeRolePolicyDocument": {
@@ -167,93 +246,151 @@
     ]
    },
    "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/UploadHandler/ServiceRole/Resource"
+    "aws:cdk:path": "DocumentProcessorStack/DocumentProcessor/SQSConsumerFunction/ServiceRole/Resource"
    }
   },
-  "UploadHandlerServiceRoleDefaultPolicy63BF30CF": {
+  "DocumentProcessorSQSConsumerFunctionServiceRoleDefaultPolicy8E283A2D": {
    "Type": "AWS::IAM::Policy",
    "Properties": {
     "PolicyDocument": {
      "Statement": [
       {
        "Action": [
-        "s3:PutObject",
-        "s3:PutObjectLegalHold",
-        "s3:PutObjectRetention",
-        "s3:PutObjectTagging",
-        "s3:PutObjectVersionTagging",
-        "s3:Abort*"
+        "sqs:ReceiveMessage",
+        "sqs:ChangeMessageVisibility",
+        "sqs:GetQueueUrl",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes"
        ],
        "Effect": "Allow",
        "Resource": {
-        "Fn::Join": [
-         "",
-         [
-          {
-           "Fn::GetAtt": [
-            "DocumentStorageDocumentBucket03F69AFE",
-            "Arn"
-           ]
-          },
-          "/*"
-         ]
+        "Fn::GetAtt": [
+         "IngestionQueue781421A8",
+         "Arn"
         ]
        }
       },
       {
-       "Action": "s3:PutObject",
+       "Action": [
+        "sqs:SendMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl"
+       ],
        "Effect": "Allow",
        "Resource": {
-        "Fn::Join": [
-         "",
-         [
-          {
-           "Fn::GetAtt": [
-            "DocumentStorageDocumentBucket03F69AFE",
-            "Arn"
-           ]
-          },
-          "/*"
-         ]
+        "Fn::GetAtt": [
+         "IngestionQueueDeadLetterQueue5AA5A009",
+         "Arn"
         ]
        }
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "DocumentMetadataTable1D124EF4",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "DocumentMetadataTable1D124EF4",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "s3:GetObject*",
+        "s3:GetBucket*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "DocumentStorageDocumentBucket03F69AFE",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "DocumentStorageDocumentBucket03F69AFE",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
       }
      ],
      "Version": "2012-10-17"
     },
-    "PolicyName": "UploadHandlerServiceRoleDefaultPolicy63BF30CF",
+    "PolicyName": "DocumentProcessorSQSConsumerFunctionServiceRoleDefaultPolicy8E283A2D",
     "Roles": [
      {
-      "Ref": "UploadHandlerServiceRole8CD4AA9A"
+      "Ref": "DocumentProcessorSQSConsumerFunctionServiceRole7DFEBA4C"
      }
     ]
    },
    "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/UploadHandler/ServiceRole/DefaultPolicy/Resource"
+    "aws:cdk:path": "DocumentProcessorStack/DocumentProcessor/SQSConsumerFunction/ServiceRole/DefaultPolicy/Resource"
    }
   },
-  "UploadHandler4CB020C5": {
+  "DocumentProcessorSQSConsumerFunction4B1B966C": {
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
      },
-     "S3Key": "39acd856b12a0559e696e28ff5699a0d90cd6570effd445fdb5bd2dccbadd844.zip"
+     "S3Key": "38679849e0ebf0f80bf5ef905d39c8b2c033928afd0a24b055ec5049e454314b.zip"
     },
     "Environment": {
      "Variables": {
-      "S3_BUCKET_NAME": {
-       "Ref": "DocumentStorageDocumentBucket03F69AFE"
+      "DOCUMENT_TABLE_NAME": {
+       "Ref": "DocumentMetadataTable1D124EF4"
       },
-      "LOG_LEVEL": "INFO"
+      "DOCUMENT_BUCKET_NAME": {
+       "Ref": "DocumentStorageDocumentBucket03F69AFE"
+      }
      }
     },
     "Handler": "index.handler",
     "MemorySize": 512,
     "Role": {
      "Fn::GetAtt": [
-      "UploadHandlerServiceRole8CD4AA9A",
+      "DocumentProcessorSQSConsumerFunctionServiceRole7DFEBA4C",
       "Arn"
      ]
     },
@@ -261,17 +398,36 @@
     "Timeout": 30
    },
    "DependsOn": [
-    "UploadHandlerServiceRoleDefaultPolicy63BF30CF",
-    "UploadHandlerServiceRole8CD4AA9A"
+    "DocumentProcessorSQSConsumerFunctionServiceRoleDefaultPolicy8E283A2D",
+    "DocumentProcessorSQSConsumerFunctionServiceRole7DFEBA4C"
    ],
    "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/UploadHandler/Resource",
-    "aws:asset:path": "asset.39acd856b12a0559e696e28ff5699a0d90cd6570effd445fdb5bd2dccbadd844",
+    "aws:cdk:path": "DocumentProcessorStack/DocumentProcessor/SQSConsumerFunction/Resource",
+    "aws:asset:path": "asset.38679849e0ebf0f80bf5ef905d39c8b2c033928afd0a24b055ec5049e454314b",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
   },
-  "S3EventHandlerServiceRoleC74773D4": {
+  "DocumentProcessorSQSEventSource7DBF4B04": {
+   "Type": "AWS::Lambda::EventSourceMapping",
+   "Properties": {
+    "BatchSize": 10,
+    "EventSourceArn": {
+     "Fn::GetAtt": [
+      "IngestionQueue781421A8",
+      "Arn"
+     ]
+    },
+    "FunctionName": {
+     "Ref": "DocumentProcessorSQSConsumerFunction4B1B966C"
+    },
+    "MaximumBatchingWindowInSeconds": 5
+   },
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentProcessor/SQSEventSource/Resource"
+   }
+  },
+  "DocumentHandlersS3EventFunctionServiceRoleAEDA279E": {
    "Type": "AWS::IAM::Role",
    "Properties": {
     "AssumeRolePolicyDocument": {
@@ -302,10 +458,10 @@
     ]
    },
    "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/S3EventHandler/ServiceRole/Resource"
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/S3EventFunction/ServiceRole/Resource"
    }
   },
-  "S3EventHandlerServiceRoleDefaultPolicy39CDCBBB": {
+  "DocumentHandlersS3EventFunctionServiceRoleDefaultPolicy332C8C9F": {
    "Type": "AWS::IAM::Policy",
    "Properties": {
     "PolicyDocument": {
@@ -353,64 +509,42 @@
          "Arn"
         ]
        }
-      },
-      {
-       "Action": "s3:GetObject",
-       "Effect": "Allow",
-       "Resource": {
-        "Fn::Join": [
-         "",
-         [
-          {
-           "Fn::GetAtt": [
-            "DocumentStorageDocumentBucket03F69AFE",
-            "Arn"
-           ]
-          },
-          "/*"
-         ]
-        ]
-       }
       }
      ],
      "Version": "2012-10-17"
     },
-    "PolicyName": "S3EventHandlerServiceRoleDefaultPolicy39CDCBBB",
+    "PolicyName": "DocumentHandlersS3EventFunctionServiceRoleDefaultPolicy332C8C9F",
     "Roles": [
      {
-      "Ref": "S3EventHandlerServiceRoleC74773D4"
+      "Ref": "DocumentHandlersS3EventFunctionServiceRoleAEDA279E"
      }
     ]
    },
    "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/S3EventHandler/ServiceRole/DefaultPolicy/Resource"
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/S3EventFunction/ServiceRole/DefaultPolicy/Resource"
    }
   },
-  "S3EventHandlerBAFC08A8": {
+  "DocumentHandlersS3EventFunctionCBECE6DE": {
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
      },
-     "S3Key": "b5935d61104eb568fec2f99df4259d0773fa4766421865df664e925a7c5f1523.zip"
+     "S3Key": "03680f124228ede509fc263cefee859eecd26426a0a3aae97a7268a758bab238.zip"
     },
     "Environment": {
      "Variables": {
-      "S3_BUCKET_NAME": {
-       "Ref": "DocumentStorageDocumentBucket03F69AFE"
-      },
-      "LOG_LEVEL": "INFO",
       "SQS_QUEUE_URL": {
        "Ref": "IngestionQueue781421A8"
       }
      }
     },
     "Handler": "index.handler",
-    "MemorySize": 512,
+    "MemorySize": 256,
     "Role": {
      "Fn::GetAtt": [
-      "S3EventHandlerServiceRoleC74773D4",
+      "DocumentHandlersS3EventFunctionServiceRoleAEDA279E",
       "Arn"
      ]
     },
@@ -418,17 +552,17 @@
     "Timeout": 30
    },
    "DependsOn": [
-    "S3EventHandlerServiceRoleDefaultPolicy39CDCBBB",
-    "S3EventHandlerServiceRoleC74773D4"
+    "DocumentHandlersS3EventFunctionServiceRoleDefaultPolicy332C8C9F",
+    "DocumentHandlersS3EventFunctionServiceRoleAEDA279E"
    ],
    "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/S3EventHandler/Resource",
-    "aws:asset:path": "asset.b5935d61104eb568fec2f99df4259d0773fa4766421865df664e925a7c5f1523",
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/S3EventFunction/Resource",
+    "aws:asset:path": "asset.03680f124228ede509fc263cefee859eecd26426a0a3aae97a7268a758bab238",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
   },
-  "SQSConsumerHandlerServiceRole99E01B5D": {
+  "DocumentHandlersUploadFunctionServiceRole5E92A912": {
    "Type": "AWS::IAM::Role",
    "Properties": {
     "AssumeRolePolicyDocument": {
@@ -459,35 +593,26 @@
     ]
    },
    "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/SQSConsumerHandler/ServiceRole/Resource"
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/UploadFunction/ServiceRole/Resource"
    }
   },
-  "SQSConsumerHandlerServiceRoleDefaultPolicy0B474BB7": {
+  "DocumentHandlersUploadFunctionServiceRoleDefaultPolicy4A771711": {
    "Type": "AWS::IAM::Policy",
    "Properties": {
     "PolicyDocument": {
      "Statement": [
       {
        "Action": [
-        "sqs:ReceiveMessage",
-        "sqs:ChangeMessageVisibility",
-        "sqs:GetQueueUrl",
-        "sqs:DeleteMessage",
-        "sqs:GetQueueAttributes"
-       ],
-       "Effect": "Allow",
-       "Resource": {
-        "Fn::GetAtt": [
-         "IngestionQueue781421A8",
-         "Arn"
-        ]
-       }
-      },
-      {
-       "Action": [
         "s3:GetObject*",
         "s3:GetBucket*",
-        "s3:List*"
+        "s3:List*",
+        "s3:DeleteObject*",
+        "s3:PutObject",
+        "s3:PutObjectLegalHold",
+        "s3:PutObjectRetention",
+        "s3:PutObjectTagging",
+        "s3:PutObjectVersionTagging",
+        "s3:Abort*"
        ],
        "Effect": "Allow",
        "Resource": [
@@ -512,95 +637,393 @@
          ]
         }
        ]
-      },
-      {
-       "Action": "s3:GetObject",
-       "Effect": "Allow",
-       "Resource": {
-        "Fn::Join": [
-         "",
-         [
-          {
-           "Fn::GetAtt": [
-            "DocumentStorageDocumentBucket03F69AFE",
-            "Arn"
-           ]
-          },
-          "/*"
-         ]
-        ]
-       }
       }
      ],
      "Version": "2012-10-17"
     },
-    "PolicyName": "SQSConsumerHandlerServiceRoleDefaultPolicy0B474BB7",
+    "PolicyName": "DocumentHandlersUploadFunctionServiceRoleDefaultPolicy4A771711",
     "Roles": [
      {
-      "Ref": "SQSConsumerHandlerServiceRole99E01B5D"
+      "Ref": "DocumentHandlersUploadFunctionServiceRole5E92A912"
      }
     ]
    },
    "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/SQSConsumerHandler/ServiceRole/DefaultPolicy/Resource"
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/UploadFunction/ServiceRole/DefaultPolicy/Resource"
    }
   },
-  "SQSConsumerHandlerCD65C00A": {
+  "DocumentHandlersUploadFunction9441D6B1": {
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
      },
-     "S3Key": "5f3716b7c62fde150e7b39b594560fe63ceffc9821cb3bb7f9c2bbfb7c392115.zip"
+     "S3Key": "0093c3a84d425722b5e32a9d509c7079d26e176a7ef53d76ed58fa3ada0b5d25.zip"
     },
     "Environment": {
      "Variables": {
       "S3_BUCKET_NAME": {
        "Ref": "DocumentStorageDocumentBucket03F69AFE"
-      },
-      "LOG_LEVEL": "INFO"
+      }
      }
     },
     "Handler": "index.handler",
     "MemorySize": 512,
     "Role": {
      "Fn::GetAtt": [
-      "SQSConsumerHandlerServiceRole99E01B5D",
+      "DocumentHandlersUploadFunctionServiceRole5E92A912",
       "Arn"
      ]
     },
     "Runtime": "nodejs18.x",
-    "Timeout": 60
+    "Timeout": 30
    },
    "DependsOn": [
-    "SQSConsumerHandlerServiceRoleDefaultPolicy0B474BB7",
-    "SQSConsumerHandlerServiceRole99E01B5D"
+    "DocumentHandlersUploadFunctionServiceRoleDefaultPolicy4A771711",
+    "DocumentHandlersUploadFunctionServiceRole5E92A912"
    ],
    "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/SQSConsumerHandler/Resource",
-    "aws:asset:path": "asset.5f3716b7c62fde150e7b39b594560fe63ceffc9821cb3bb7f9c2bbfb7c392115",
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/UploadFunction/Resource",
+    "aws:asset:path": "asset.0093c3a84d425722b5e32a9d509c7079d26e176a7ef53d76ed58fa3ada0b5d25",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
   },
-  "SQSConsumerHandlerSqsEventSourceDocumentProcessorStackIngestionQueue6CECB6886F1E91CE": {
-   "Type": "AWS::Lambda::EventSourceMapping",
+  "DocumentHandlersDocumentAPIA7D0E56A": {
+   "Type": "AWS::ApiGateway::RestApi",
    "Properties": {
-    "BatchSize": 10,
-    "EventSourceArn": {
+    "Description": "API for document processing and uploads",
+    "Name": "Document Processing API"
+   },
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/DocumentAPI/Resource"
+   }
+  },
+  "DocumentHandlersDocumentAPICloudWatchRoleAFF91DFC": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "apigateway.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+       ]
+      ]
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/DocumentAPI/CloudWatchRole/Resource"
+   }
+  },
+  "DocumentHandlersDocumentAPIAccount10B1D79B": {
+   "Type": "AWS::ApiGateway::Account",
+   "Properties": {
+    "CloudWatchRoleArn": {
      "Fn::GetAtt": [
-      "IngestionQueue781421A8",
+      "DocumentHandlersDocumentAPICloudWatchRoleAFF91DFC",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "DocumentHandlersDocumentAPIA7D0E56A"
+   ],
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/DocumentAPI/Account"
+   }
+  },
+  "DocumentHandlersDocumentAPIDeployment56C1748A96f1ea5e590a1a3f17e9fe5c0ec24875": {
+   "Type": "AWS::ApiGateway::Deployment",
+   "Properties": {
+    "Description": "API for document processing and uploads",
+    "RestApiId": {
+     "Ref": "DocumentHandlersDocumentAPIA7D0E56A"
+    }
+   },
+   "DependsOn": [
+    "DocumentHandlersDocumentAPIOPTIONS8AF015C4",
+    "DocumentHandlersDocumentAPIuploadOPTIONS25D3AD41",
+    "DocumentHandlersDocumentAPIuploadPOST9021FBEE",
+    "DocumentHandlersDocumentAPIupload24EE0148"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/DocumentAPI/Deployment/Resource",
+    "aws:cdk:do-not-refactor": true
+   }
+  },
+  "DocumentHandlersDocumentAPIDeploymentStageprod57F26FBE": {
+   "Type": "AWS::ApiGateway::Stage",
+   "Properties": {
+    "DeploymentId": {
+     "Ref": "DocumentHandlersDocumentAPIDeployment56C1748A96f1ea5e590a1a3f17e9fe5c0ec24875"
+    },
+    "RestApiId": {
+     "Ref": "DocumentHandlersDocumentAPIA7D0E56A"
+    },
+    "StageName": "prod"
+   },
+   "DependsOn": [
+    "DocumentHandlersDocumentAPIAccount10B1D79B"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/DocumentAPI/DeploymentStage.prod/Resource"
+   }
+  },
+  "DocumentHandlersDocumentAPIOPTIONS8AF015C4": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Fn::GetAtt": [
+      "DocumentHandlersDocumentAPIA7D0E56A",
+      "RootResourceId"
+     ]
+    },
+    "RestApiId": {
+     "Ref": "DocumentHandlersDocumentAPIA7D0E56A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/OPTIONS/Resource"
+   }
+  },
+  "DocumentHandlersDocumentAPIupload24EE0148": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "DocumentHandlersDocumentAPIA7D0E56A",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "upload",
+    "RestApiId": {
+     "Ref": "DocumentHandlersDocumentAPIA7D0E56A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/upload/Resource"
+   }
+  },
+  "DocumentHandlersDocumentAPIuploadOPTIONS25D3AD41": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "DocumentHandlersDocumentAPIupload24EE0148"
+    },
+    "RestApiId": {
+     "Ref": "DocumentHandlersDocumentAPIA7D0E56A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/upload/OPTIONS/Resource"
+   }
+  },
+  "DocumentHandlersDocumentAPIuploadPOSTApiPermissionDocumentProcessorStackDocumentHandlersDocumentAPI24CB3B24POSTuploadF9084257": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "DocumentHandlersUploadFunction9441D6B1",
       "Arn"
      ]
     },
-    "FunctionName": {
-     "Ref": "SQSConsumerHandlerCD65C00A"
-    },
-    "MaximumBatchingWindowInSeconds": 5
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "DocumentHandlersDocumentAPIA7D0E56A"
+       },
+       "/",
+       {
+        "Ref": "DocumentHandlersDocumentAPIDeploymentStageprod57F26FBE"
+       },
+       "/POST/upload"
+      ]
+     ]
+    }
    },
    "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/SQSConsumerHandler/SqsEventSource:DocumentProcessorStackIngestionQueue6CECB688/Resource"
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/upload/POST/ApiPermission.DocumentProcessorStackDocumentHandlersDocumentAPI24CB3B24.POST..upload"
+   }
+  },
+  "DocumentHandlersDocumentAPIuploadPOSTApiPermissionTestDocumentProcessorStackDocumentHandlersDocumentAPI24CB3B24POSTupload9EBFB7B0": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "DocumentHandlersUploadFunction9441D6B1",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "DocumentHandlersDocumentAPIA7D0E56A"
+       },
+       "/test-invoke-stage/POST/upload"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/upload/POST/ApiPermission.Test.DocumentProcessorStackDocumentHandlersDocumentAPI24CB3B24.POST..upload"
+   }
+  },
+  "DocumentHandlersDocumentAPIuploadPOST9021FBEE": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "DocumentHandlersUploadFunction9441D6B1",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "DocumentHandlersDocumentAPIupload24EE0148"
+    },
+    "RestApiId": {
+     "Ref": "DocumentHandlersDocumentAPIA7D0E56A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/upload/POST/Resource"
    }
   },
   "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC": {
@@ -686,279 +1109,10 @@
     "aws:cdk:path": "DocumentProcessorStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource"
    }
   },
-  "ApiGateway11E7F47B": {
-   "Type": "AWS::ApiGateway::RestApi",
-   "Properties": {
-    "BinaryMediaTypes": [
-     "multipart/form-data"
-    ],
-    "Name": "DocumentProcessorApi"
-   },
-   "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/ApiGateway/Resource"
-   }
-  },
-  "ApiGatewayCloudWatchRoleA41EF9FE": {
-   "Type": "AWS::IAM::Role",
-   "Properties": {
-    "AssumeRolePolicyDocument": {
-     "Statement": [
-      {
-       "Action": "sts:AssumeRole",
-       "Effect": "Allow",
-       "Principal": {
-        "Service": "apigateway.amazonaws.com"
-       }
-      }
-     ],
-     "Version": "2012-10-17"
-    },
-    "ManagedPolicyArns": [
-     {
-      "Fn::Join": [
-       "",
-       [
-        "arn:",
-        {
-         "Ref": "AWS::Partition"
-        },
-        ":iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
-       ]
-      ]
-     }
-    ]
-   },
-   "UpdateReplacePolicy": "Retain",
-   "DeletionPolicy": "Retain",
-   "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/ApiGateway/CloudWatchRole/Resource"
-   }
-  },
-  "ApiGatewayAccountBC7F34C1": {
-   "Type": "AWS::ApiGateway::Account",
-   "Properties": {
-    "CloudWatchRoleArn": {
-     "Fn::GetAtt": [
-      "ApiGatewayCloudWatchRoleA41EF9FE",
-      "Arn"
-     ]
-    }
-   },
-   "DependsOn": [
-    "ApiGateway11E7F47B"
-   ],
-   "UpdateReplacePolicy": "Retain",
-   "DeletionPolicy": "Retain",
-   "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/ApiGateway/Account"
-   }
-  },
-  "ApiGatewayDeploymentA26796E87af7c17209d359dd805c120adb5251fd": {
-   "Type": "AWS::ApiGateway::Deployment",
-   "Properties": {
-    "Description": "Automatically created by the RestApi construct",
-    "RestApiId": {
-     "Ref": "ApiGateway11E7F47B"
-    }
-   },
-   "DependsOn": [
-    "ApiGatewayuploadPOSTC7BBEC8C",
-    "ApiGatewayupload68601BDD"
-   ],
-   "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/ApiGateway/Deployment/Resource",
-    "aws:cdk:do-not-refactor": true
-   }
-  },
-  "ApiGatewayDeploymentStageprod1C6D5CD6": {
-   "Type": "AWS::ApiGateway::Stage",
-   "Properties": {
-    "DeploymentId": {
-     "Ref": "ApiGatewayDeploymentA26796E87af7c17209d359dd805c120adb5251fd"
-    },
-    "RestApiId": {
-     "Ref": "ApiGateway11E7F47B"
-    },
-    "StageName": "prod"
-   },
-   "DependsOn": [
-    "ApiGatewayAccountBC7F34C1"
-   ],
-   "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/ApiGateway/DeploymentStage.prod/Resource"
-   }
-  },
-  "ApiGatewayupload68601BDD": {
-   "Type": "AWS::ApiGateway::Resource",
-   "Properties": {
-    "ParentId": {
-     "Fn::GetAtt": [
-      "ApiGateway11E7F47B",
-      "RootResourceId"
-     ]
-    },
-    "PathPart": "upload",
-    "RestApiId": {
-     "Ref": "ApiGateway11E7F47B"
-    }
-   },
-   "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/ApiGateway/Default/upload/Resource"
-   }
-  },
-  "ApiGatewayuploadPOSTApiPermissionDocumentProcessorStackApiGateway6D26C249POSTuploadC2ED4BA4": {
-   "Type": "AWS::Lambda::Permission",
-   "Properties": {
-    "Action": "lambda:InvokeFunction",
-    "FunctionName": {
-     "Fn::GetAtt": [
-      "UploadHandler4CB020C5",
-      "Arn"
-     ]
-    },
-    "Principal": "apigateway.amazonaws.com",
-    "SourceArn": {
-     "Fn::Join": [
-      "",
-      [
-       "arn:",
-       {
-        "Ref": "AWS::Partition"
-       },
-       ":execute-api:",
-       {
-        "Ref": "AWS::Region"
-       },
-       ":",
-       {
-        "Ref": "AWS::AccountId"
-       },
-       ":",
-       {
-        "Ref": "ApiGateway11E7F47B"
-       },
-       "/",
-       {
-        "Ref": "ApiGatewayDeploymentStageprod1C6D5CD6"
-       },
-       "/POST/upload"
-      ]
-     ]
-    }
-   },
-   "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/ApiGateway/Default/upload/POST/ApiPermission.DocumentProcessorStackApiGateway6D26C249.POST..upload"
-   }
-  },
-  "ApiGatewayuploadPOSTApiPermissionTestDocumentProcessorStackApiGateway6D26C249POSTupload39D71655": {
-   "Type": "AWS::Lambda::Permission",
-   "Properties": {
-    "Action": "lambda:InvokeFunction",
-    "FunctionName": {
-     "Fn::GetAtt": [
-      "UploadHandler4CB020C5",
-      "Arn"
-     ]
-    },
-    "Principal": "apigateway.amazonaws.com",
-    "SourceArn": {
-     "Fn::Join": [
-      "",
-      [
-       "arn:",
-       {
-        "Ref": "AWS::Partition"
-       },
-       ":execute-api:",
-       {
-        "Ref": "AWS::Region"
-       },
-       ":",
-       {
-        "Ref": "AWS::AccountId"
-       },
-       ":",
-       {
-        "Ref": "ApiGateway11E7F47B"
-       },
-       "/test-invoke-stage/POST/upload"
-      ]
-     ]
-    }
-   },
-   "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/ApiGateway/Default/upload/POST/ApiPermission.Test.DocumentProcessorStackApiGateway6D26C249.POST..upload"
-   }
-  },
-  "ApiGatewayuploadPOSTC7BBEC8C": {
-   "Type": "AWS::ApiGateway::Method",
-   "Properties": {
-    "ApiKeyRequired": false,
-    "AuthorizationType": "NONE",
-    "HttpMethod": "POST",
-    "Integration": {
-     "ContentHandling": "CONVERT_TO_BINARY",
-     "IntegrationHttpMethod": "POST",
-     "Type": "AWS_PROXY",
-     "Uri": {
-      "Fn::Join": [
-       "",
-       [
-        "arn:",
-        {
-         "Ref": "AWS::Partition"
-        },
-        ":apigateway:",
-        {
-         "Ref": "AWS::Region"
-        },
-        ":lambda:path/2015-03-31/functions/",
-        {
-         "Fn::GetAtt": [
-          "UploadHandler4CB020C5",
-          "Arn"
-         ]
-        },
-        "/invocations"
-       ]
-      ]
-     }
-    },
-    "MethodResponses": [
-     {
-      "ResponseModels": {
-       "application/json": "Empty"
-      },
-      "StatusCode": "200"
-     },
-     {
-      "ResponseModels": {
-       "application/json": "Error"
-      },
-      "StatusCode": "400"
-     },
-     {
-      "ResponseModels": {
-       "application/json": "Error"
-      },
-      "StatusCode": "500"
-     }
-    ],
-    "ResourceId": {
-     "Ref": "ApiGatewayupload68601BDD"
-    },
-    "RestApiId": {
-     "Ref": "ApiGateway11E7F47B"
-    }
-   },
-   "Metadata": {
-    "aws:cdk:path": "DocumentProcessorStack/ApiGateway/Default/upload/POST/Resource"
-   }
-  },
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/2WQ21LCMBCGn4X7sJbyBIB6B2J5gM6SLpjSJpXd0Olk+u5OUkQdr/5vz4cc8iyHbIY9z3V1mTfmCOEgqC8Key4DLyGsvb6QqM3J3mmSNTKNqsH2WCGEzcnu6doaZuNszH31VkvklxtZOTh/1bTFrjP2HMP/vaPiT4bw7slTzEjwPaC0rqKaYZfk0dtgC6FwTSpIuneN0UM0JxoVL0tkJmFYRVHYmTMK9ThAKIhl1ZlU/YMrrZ23op6pa9zQkk3H/7IOguc0coKCOB0SP/Iw7j0n3pJ8uCq6JhrHP+EHpA1j0/uX3rx0XkYVr4ean275EhYLyGY1GzO/eiumJSgm/QJ3986FzAEAAA=="
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/2WQTXLCMAyFz8LeqDScAGi7o6Whe0ZxBDUkdopkmIzHd+/YCYWZrt6nH+tZKqCYFTCb4JWnuj5NG1NB2Arqk8Ir7wLPISy9PpGo1d6ONMgSmaJqsK1qhLDa2w2dW8NsnE29b95qSfx6IStb58+a1th1xh5S+X82qrq32Lq6gvCFVUOpLUNU/MMQPj35nMxws95ZV9OR4T3Ln6vBFkLphilZN64xuk/hQFHxfIfMJAyLJAo7c0ChK/YQSmJZdCa/vuNCa+etqBfqGte3ZPNZHqKt4CFbDlAS5xXTrdSa5NvVqTjSrTqaZI7xMbq35B+moeP9Prx0XqJK28ORny7FHJ6fYTY5sjHTs7diWoJy0F/pvxLl5gEAAA=="
    },
    "Metadata": {
     "aws:cdk:path": "DocumentProcessorStack/CDKMetadata/Default"
@@ -967,14 +1121,14 @@
   }
  },
  "Outputs": {
-  "ApiGatewayEndpoint5AA8EC3A": {
+  "DocumentHandlersDocumentAPIEndpoint6FC737B8": {
    "Value": {
     "Fn::Join": [
      "",
      [
       "https://",
       {
-       "Ref": "ApiGateway11E7F47B"
+       "Ref": "DocumentHandlersDocumentAPIA7D0E56A"
       },
       ".execute-api.",
       {
@@ -986,22 +1140,64 @@
       },
       "/",
       {
-       "Ref": "ApiGatewayDeploymentStageprod1C6D5CD6"
+       "Ref": "DocumentHandlersDocumentAPIDeploymentStageprod57F26FBE"
       },
       "/"
      ]
     ]
    }
   },
-  "ApiURL": {
-   "Description": "URL for uploading documents via API Gateway",
+  "BucketName": {
+   "Description": "The name of the S3 bucket for document storage",
+   "Value": {
+    "Ref": "DocumentStorageDocumentBucket03F69AFE"
+   }
+  },
+  "TableName": {
+   "Description": "The name of the DynamoDB table for document metadata",
+   "Value": {
+    "Ref": "DocumentMetadataTable1D124EF4"
+   }
+  },
+  "QueueUrl": {
+   "Description": "The URL of the SQS queue for document ingestion",
+   "Value": {
+    "Ref": "IngestionQueue781421A8"
+   }
+  },
+  "DeadLetterQueueUrl": {
+   "Description": "The URL of the dead-letter queue for failed messages",
+   "Value": {
+    "Ref": "IngestionQueueDeadLetterQueue5AA5A009"
+   }
+  },
+  "LambdaFunction": {
+   "Description": "The name of the Lambda function for document processing",
+   "Value": {
+    "Ref": "DocumentProcessorSQSConsumerFunction4B1B966C"
+   }
+  },
+  "S3EventFunction": {
+   "Description": "The name of the Lambda function for S3 event processing",
+   "Value": {
+    "Ref": "DocumentHandlersS3EventFunctionCBECE6DE"
+   }
+  },
+  "UploadFunction": {
+   "Description": "The name of the Lambda function for document uploads",
+   "Value": {
+    "Ref": "DocumentHandlersUploadFunction9441D6B1"
+   }
+  },
+  "ApiEndpoint": {
+   "Description": "The URL of the API Gateway endpoint for document uploads",
    "Value": {
     "Fn::Join": [
      "",
      [
       "https://",
       {
-       "Ref": "ApiGateway11E7F47B"
+       "Ref": "DocumentHandlersDocumentAPIA7D0E56A"
       },
       ".execute-api.",
       {
@@ -1013,29 +1209,11 @@
       },
       "/",
       {
-       "Ref": "ApiGatewayDeploymentStageprod1C6D5CD6"
+       "Ref": "DocumentHandlersDocumentAPIDeploymentStageprod57F26FBE"
       },
-      "/upload"
+      "/"
      ]
     ]
-   }
-  },
-  "BucketName": {
-   "Description": "S3 bucket for document storage",
-   "Value": {
-    "Ref": "DocumentStorageDocumentBucket03F69AFE"
-   }
-  },
-  "QueueUrl": {
-   "Description": "SQS queue URL for document ingestion",
-   "Value": {
-    "Ref": "IngestionQueue781421A8"
-   }
-  },
-  "DeadLetterQueueUrl": {
-   "Description": "Dead letter queue URL for failed messages",
-   "Value": {
-    "Ref": "IngestionQueueDeadLetterQueue5AA5A009"
    }
   }
  },

@@ -1,4 +1,4 @@
-import { LogLevel } from '../utils/logger';
+import { LogLevel } from '../shared/logger/logger'; 
 
 export const environment = {
   aws: {

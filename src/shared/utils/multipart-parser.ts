@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import { UploadedFile } from '../services/s3upload.service';
-import { Logger } from './logger';
+import { UploadedFile } from '../../shared/models/uploaded-file.model';
+import { Logger } from '../../shared/logger/logger';
 
 export class MultipartParser {
   private static logger = new Logger('MultipartParser');

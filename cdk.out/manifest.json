@@ -18,7 +18,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/d4f1063059f6c4c3eb64a0a7500af07fbfa00bb2f531d0856d73a977d927e2a3.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/e8a4a110d4ac8231b6b38a98a6c9910c5778ac512249207e04d70088f909b206.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -46,10 +46,24 @@
             "data": "DocumentStorageDocumentBucketNotificationsE387C201"
           }
         ],
-        "/DocumentProcessorStack/DocumentStorage/DocumentBucket/AllowBucketNotificationsToDocumentProcessorStackS3EventHandler32E152AB": [
+        "/DocumentProcessorStack/DocumentStorage/DocumentBucket/AllowBucketNotificationsToDocumentProcessorStackDocumentHandlersS3EventFunction0FDAF2B3": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "DocumentStorageDocumentBucketAllowBucketNotificationsToDocumentProcessorStackS3EventHandler32E152ABC3B21B33"
+            "data": "DocumentStorageDocumentBucketAllowBucketNotificationsToDocumentProcessorStackDocumentHandlersS3EventFunction0FDAF2B33AA9B017"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentMetadataTable/DocumentMetadataTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "DocumentMetadataTable1D124EF4"
+            }
+          }
+        ],
+        "/DocumentProcessorStack/DocumentMetadataTable/DocumentMetadataTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentMetadataTable1D124EF4"
           }
         ],
         "/DocumentProcessorStack/IngestionQueue/DeadLetterQueue/Resource": [
@@ -64,64 +78,136 @@
             "data": "IngestionQueue781421A8"
           }
         ],
-        "/DocumentProcessorStack/UploadHandler/ServiceRole/Resource": [
+        "/DocumentProcessorStack/DocumentProcessor/SQSConsumerFunction/ServiceRole/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "UploadHandlerServiceRole8CD4AA9A"
+            "data": "DocumentProcessorSQSConsumerFunctionServiceRole7DFEBA4C"
           }
         ],
-        "/DocumentProcessorStack/UploadHandler/ServiceRole/DefaultPolicy/Resource": [
+        "/DocumentProcessorStack/DocumentProcessor/SQSConsumerFunction/ServiceRole/DefaultPolicy/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "UploadHandlerServiceRoleDefaultPolicy63BF30CF"
+            "data": "DocumentProcessorSQSConsumerFunctionServiceRoleDefaultPolicy8E283A2D"
           }
         ],
-        "/DocumentProcessorStack/UploadHandler/Resource": [
+        "/DocumentProcessorStack/DocumentProcessor/SQSConsumerFunction/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "UploadHandler4CB020C5"
+            "data": "DocumentProcessorSQSConsumerFunction4B1B966C"
           }
         ],
-        "/DocumentProcessorStack/S3EventHandler/ServiceRole/Resource": [
+        "/DocumentProcessorStack/DocumentProcessor/SQSEventSource/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "S3EventHandlerServiceRoleC74773D4"
+            "data": "DocumentProcessorSQSEventSource7DBF4B04"
           }
         ],
-        "/DocumentProcessorStack/S3EventHandler/ServiceRole/DefaultPolicy/Resource": [
+        "/DocumentProcessorStack/DocumentHandlers/S3EventFunction/ServiceRole/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "S3EventHandlerServiceRoleDefaultPolicy39CDCBBB"
+            "data": "DocumentHandlersS3EventFunctionServiceRoleAEDA279E"
           }
         ],
-        "/DocumentProcessorStack/S3EventHandler/Resource": [
+        "/DocumentProcessorStack/DocumentHandlers/S3EventFunction/ServiceRole/DefaultPolicy/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "S3EventHandlerBAFC08A8"
+            "data": "DocumentHandlersS3EventFunctionServiceRoleDefaultPolicy332C8C9F"
           }
         ],
-        "/DocumentProcessorStack/SQSConsumerHandler/ServiceRole/Resource": [
+        "/DocumentProcessorStack/DocumentHandlers/S3EventFunction/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "SQSConsumerHandlerServiceRole99E01B5D"
+            "data": "DocumentHandlersS3EventFunctionCBECE6DE"
           }
         ],
-        "/DocumentProcessorStack/SQSConsumerHandler/ServiceRole/DefaultPolicy/Resource": [
+        "/DocumentProcessorStack/DocumentHandlers/UploadFunction/ServiceRole/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "SQSConsumerHandlerServiceRoleDefaultPolicy0B474BB7"
+            "data": "DocumentHandlersUploadFunctionServiceRole5E92A912"
           }
         ],
-        "/DocumentProcessorStack/SQSConsumerHandler/Resource": [
+        "/DocumentProcessorStack/DocumentHandlers/UploadFunction/ServiceRole/DefaultPolicy/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "SQSConsumerHandlerCD65C00A"
+            "data": "DocumentHandlersUploadFunctionServiceRoleDefaultPolicy4A771711"
           }
         ],
-        "/DocumentProcessorStack/SQSConsumerHandler/SqsEventSource:DocumentProcessorStackIngestionQueue6CECB688/Resource": [
+        "/DocumentProcessorStack/DocumentHandlers/UploadFunction/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "SQSConsumerHandlerSqsEventSourceDocumentProcessorStackIngestionQueue6CECB6886F1E91CE"
+            "data": "DocumentHandlersUploadFunction9441D6B1"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPIA7D0E56A"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/CloudWatchRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPICloudWatchRoleAFF91DFC"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/Account": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPIAccount10B1D79B"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/Deployment/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPIDeployment56C1748A96f1ea5e590a1a3f17e9fe5c0ec24875"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/DeploymentStage.prod/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPIDeploymentStageprod57F26FBE"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/Endpoint": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPIEndpoint6FC737B8"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPIOPTIONS8AF015C4"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/upload/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPIupload24EE0148"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/upload/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPIuploadOPTIONS25D3AD41"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/upload/POST/ApiPermission.DocumentProcessorStackDocumentHandlersDocumentAPI24CB3B24.POST..upload": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPIuploadPOSTApiPermissionDocumentProcessorStackDocumentHandlersDocumentAPI24CB3B24POSTuploadF9084257"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/upload/POST/ApiPermission.Test.DocumentProcessorStackDocumentHandlersDocumentAPI24CB3B24.POST..upload": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPIuploadPOSTApiPermissionTestDocumentProcessorStackDocumentHandlersDocumentAPI24CB3B24POSTupload9EBFB7B0"
+          }
+        ],
+        "/DocumentProcessorStack/DocumentHandlers/DocumentAPI/Default/upload/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentHandlersDocumentAPIuploadPOST9021FBEE"
           }
         ],
         "/DocumentProcessorStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource": [
@@ -142,76 +228,16 @@
             "data": "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691"
           }
         ],
-        "/DocumentProcessorStack/ApiGateway/Resource": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ApiGateway11E7F47B"
-          }
-        ],
-        "/DocumentProcessorStack/ApiGateway/CloudWatchRole/Resource": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ApiGatewayCloudWatchRoleA41EF9FE"
-          }
-        ],
-        "/DocumentProcessorStack/ApiGateway/Account": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ApiGatewayAccountBC7F34C1"
-          }
-        ],
-        "/DocumentProcessorStack/ApiGateway/Deployment/Resource": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ApiGatewayDeploymentA26796E87af7c17209d359dd805c120adb5251fd"
-          }
-        ],
-        "/DocumentProcessorStack/ApiGateway/DeploymentStage.prod/Resource": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ApiGatewayDeploymentStageprod1C6D5CD6"
-          }
-        ],
-        "/DocumentProcessorStack/ApiGateway/Endpoint": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ApiGatewayEndpoint5AA8EC3A"
-          }
-        ],
-        "/DocumentProcessorStack/ApiGateway/Default/upload/Resource": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ApiGatewayupload68601BDD"
-          }
-        ],
-        "/DocumentProcessorStack/ApiGateway/Default/upload/POST/ApiPermission.DocumentProcessorStackApiGateway6D26C249.POST..upload": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ApiGatewayuploadPOSTApiPermissionDocumentProcessorStackApiGateway6D26C249POSTuploadC2ED4BA4"
-          }
-        ],
-        "/DocumentProcessorStack/ApiGateway/Default/upload/POST/ApiPermission.Test.DocumentProcessorStackApiGateway6D26C249.POST..upload": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ApiGatewayuploadPOSTApiPermissionTestDocumentProcessorStackApiGateway6D26C249POSTupload39D71655"
-          }
-        ],
-        "/DocumentProcessorStack/ApiGateway/Default/upload/POST/Resource": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ApiGatewayuploadPOSTC7BBEC8C"
-          }
-        ],
-        "/DocumentProcessorStack/ApiURL": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ApiURL"
-          }
-        ],
         "/DocumentProcessorStack/BucketName": [
           {
             "type": "aws:cdk:logicalId",
             "data": "BucketName"
+          }
+        ],
+        "/DocumentProcessorStack/TableName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TableName"
           }
         ],
         "/DocumentProcessorStack/QueueUrl": [
@@ -224,6 +250,30 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "DeadLetterQueueUrl"
+          }
+        ],
+        "/DocumentProcessorStack/LambdaFunction": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LambdaFunction"
+          }
+        ],
+        "/DocumentProcessorStack/S3EventFunction": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "S3EventFunction"
+          }
+        ],
+        "/DocumentProcessorStack/UploadFunction": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UploadFunction"
+          }
+        ],
+        "/DocumentProcessorStack/ApiEndpoint": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiEndpoint"
           }
         ],
         "/DocumentProcessorStack/CDKMetadata/Default": [
