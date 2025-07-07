@@ -7,11 +7,11 @@ import {
   DeleteMessageCommandInput
 } from '@aws-sdk/client-sqs';
 import { Logger, LogContext } from '../../shared/logger/logger';
-import { sqsClient } from '../../data/clients/sqs-client';
+import { sqsClient } from '../../clients/sqs-client';
 import { IMessageQueueService } from './message-queue.interface';
-import { DocumentMessage } from '../../data/models/document-message.dto';
+import { DocumentMessage } from '../../dtos/document-message.dto'
 import { QueueError } from '../../shared/errors';
-import { environment } from '../../shared/config/environment';
+import { environment } from '../../configs/environment';
 
 // SQS implementation of message queue service
 export class SQSService implements IMessageQueueService {

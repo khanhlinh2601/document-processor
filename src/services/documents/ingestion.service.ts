@@ -1,6 +1,6 @@
 import { S3Event } from 'aws-lambda';
 import { Logger, LogContext } from '../../shared/logger/logger';
-import { DocumentMessage } from '../../data/models/document-message.dto';
+import { DocumentMessage } from '../../dtos/document-message.dto';
 import { IMessageQueueService } from '../../services/queue/message-queue.interface';
 import { StorageError, ValidationError } from '../../shared/errors';
 

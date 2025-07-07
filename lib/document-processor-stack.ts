@@ -3,8 +3,9 @@ import { Construct } from 'constructs';
 import { DocumentMetadataTable } from '../infra/constructs/document-metadata-table';
 import { IngestionQueue } from '../infra/constructs/ingestion-queue';
 import { DocumentStorage } from '../infra/constructs/document-storage';
-import { DocumentProcessorLambda } from '../infra/constructs/document-processor-lambda';
-import { DocumentHandlers } from '../infra/constructs/document-handlers';
+import { DocumentProcessorLambda } from '../infra/constructs/sqs-consumer-lambda';
+import { DocumentHandlers } from '../infra/constructs/upload-integestion-lambda';
+import { TextractProcessor } from '../infra/constructs/textract-processor';
 
 export class DocumentProcessorStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -21,6 +22,13 @@ export class DocumentProcessorStack extends cdk.Stack {
 
     // Create the ingestion queue (SQS)
     const ingestionQueue = new IngestionQueue(this, 'IngestionQueue');
+
+    // Create the Textract processor
+    const textractProcessor = new TextractProcessor(this, 'TextractProcessor', {
+      documentBucket: documentStorage.bucket,
+      metadataTable: documentMetadataTable.table,
+      deadLetterQueue: ingestionQueue.deadLetterQueue,
+    });
 
     // Create the document processor Lambda
     const documentProcessor = new DocumentProcessorLambda(this, 'DocumentProcessor', {

@@ -173,7 +173,7 @@
     "PointInTimeRecoverySpecification": {
      "PointInTimeRecoveryEnabled": true
     },
-    "TableName": "DocumentMetadata-1751454821294"
+    "TableName": "DocumentMetadata-1751513333963"
    },
    "UpdateReplacePolicy": "Delete",
    "DeletionPolicy": "Delete",
@@ -378,7 +378,7 @@
     },
     "Environment": {
      "Variables": {
-      "DOCUMENT_TABLE_NAME": {
+      "DOCUMENT_METADATA_TABLE_NAME": {
        "Ref": "DocumentMetadataTable1D124EF4"
       },
       "DOCUMENT_BUCKET_NAME": {

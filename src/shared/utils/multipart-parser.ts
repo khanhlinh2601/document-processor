@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import { UploadedFile } from '../../shared/models/uploaded-file.model';
+import { UploadedFile } from '../../dtos/uploaded-file.model';
 import { Logger } from '../../shared/logger/logger';
 
 export class MultipartParser {

@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
-import { SQSService } from '../../services/queue/sqs.service';
-import { IngestionService } from '../../services/documents/ingestion.service';
 import { MessageQueueModule } from './message-queue.module';
 import { DocumentsModule } from './documents.module';
+import { TextractModule } from './textract.module';
 
 /**
  * Main application module that brings together all feature modules
@@ -11,10 +10,12 @@ import { DocumentsModule } from './documents.module';
   imports: [
     MessageQueueModule,
     DocumentsModule,
+    TextractModule,
   ],
   exports: [
     MessageQueueModule,
     DocumentsModule,
+    TextractModule,
   ],
 })
 export class AppModule {} 
