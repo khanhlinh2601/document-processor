@@ -5,4 +5,5 @@ export default () => ({
   s3Bucket: process.env.S3_BUCKET,
   sqsQueueUrl: process.env.SQS_QUEUE_URL,
   sqsDlqUrl: process.env.SQS_DLQ_URL,
+  sqsClassificationQueueUrl: process.env.SQS_CLASSIFICATION_QUEUE_URL,
 }); 

@@ -9,11 +9,12 @@ import { Construct } from 'constructs';
 import * as path from 'path';
 import { TextractService } from './textract-service';
 import { SnsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
-
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 export interface TextractCompletionHandlerProps {
   documentBucket: s3.Bucket;
   documentTable: dynamodb.Table;
   textractService: TextractService;
+  classificationQueue: sqs.Queue;
 }
 
 export class TextractCompletionHandler extends Construct {
@@ -32,6 +33,7 @@ export class TextractCompletionHandler extends Construct {
       environment: {
         DOCUMENTS_TABLE: props.documentTable.tableName,
         DOCUMENT_BUCKET: props.documentBucket.bucketName,
+        SQS_CLASSIFICATION_QUEUE_URL: props.classificationQueue.queueUrl,
       },
       bundling: {
         minify: true,
@@ -53,6 +55,9 @@ export class TextractCompletionHandler extends Construct {
     // Grant permissions
     props.documentBucket.grantReadWrite(this.completionFunction);
     props.documentTable.grantReadWriteData(this.completionFunction);
+    
+    // Grant permission to send messages to classification queue
+    props.classificationQueue.grantSendMessages(this.completionFunction);
     
     // Grant permissions to call Textract services for getting results
     this.completionFunction.addToRolePolicy(new iam.PolicyStatement({

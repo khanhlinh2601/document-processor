@@ -23,7 +23,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::519610608202:role/cdk-hnb659fds-deploy-role-519610608202-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::519610608202:role/cdk-hnb659fds-cfn-exec-role-519610608202-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-519610608202-us-east-1/cdc80bb7a5d17a365dab189923f0c24b4693b929df32169eb448b03a0221484a.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-519610608202-us-east-1/1696e0e0e13463864077554722a81319f595269d96a604dc1a9944c1a5c73f75.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -100,6 +100,18 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "IngestionQueue781421A8"
+          }
+        ],
+        "/DocumentProcessing-dev/ClassificationQueue/DeadLetterQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ClassificationQueueDeadLetterQueueDE207F8C"
+          }
+        ],
+        "/DocumentProcessing-dev/ClassificationQueue/Queue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ClassificationQueueADADD6EE"
           }
         ],
         "/DocumentProcessing-dev/TextractService/TextractServiceRole/Resource": [
@@ -382,6 +394,42 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "TextractCompletionHandlerTextractCompletionHandlerFunctionTextractCompletionHandlerTopicE5FF7DEC"
+          }
+        ],
+        "/DocumentProcessing-dev/ClassificationHandler/ClassificationFunction/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ClassificationHandlerClassificationFunctionServiceRoleDFFC6194"
+          }
+        ],
+        "/DocumentProcessing-dev/ClassificationHandler/ClassificationFunction/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ClassificationHandlerClassificationFunctionServiceRoleDefaultPolicy35F4F4DB"
+          }
+        ],
+        "/DocumentProcessing-dev/ClassificationHandler/ClassificationFunction/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ClassificationHandlerClassificationFunctionF4718CEB"
+          }
+        ],
+        "/DocumentProcessing-dev/ClassificationHandler/ClassificationFunction/SqsEventSource:DocumentProcessingdevClassificationQueue4F3ABC63/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ClassificationHandlerClassificationFunctionSqsEventSourceDocumentProcessingdevClassificationQueue4F3ABC63EA5B0FD6"
+          }
+        ],
+        "/DocumentProcessing-dev/IngestionQueueUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IngestionQueueUrl"
+          }
+        ],
+        "/DocumentProcessing-dev/ClassificationQueueUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ClassificationQueueUrl"
           }
         ],
         "/DocumentProcessing-dev/ApiEndpoint": [

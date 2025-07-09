@@ -9,6 +9,9 @@ import { s3Client } from '../clients/s3-client';
 import { dynamoDBClient } from '../clients/dynamodb-client';
 import { environment } from '../configs/environment';
 import { StorageError } from '../shared/errors';
+import { SendMessageCommand } from '@aws-sdk/client-sqs';
+import { sqsClient } from '../clients/sqs-client';
+import { SQSService } from '../services/sqs.service';
 /**
  * Lambda handler for Textract job completion notifications via SNS
  */
@@ -103,6 +106,8 @@ async function processTextractCompletionHandler(record: SNSEvent['Records'][0], 
     const resultKey = `extracted/${job.documentId}.json`;
     await storeResultsInS3(job.bucket, resultKey, textractResults, recordLogger);
     
+    // Trigger document classification after extraction is complete
+    await triggerDocumentClassification(job.documentId, job.bucket, resultKey, recordLogger);
     
     // Update job status in DynamoDB
     await jobRepository.updateJobStatus(job.jobId, DocumentProcessingStatus.EXTRACTED);
@@ -197,6 +202,63 @@ async function storeResultsInS3(bucket: string, key: string, results: any, logge
     throw new StorageError(
       `Failed to store Textract results: ${error instanceof Error ? error.message : String(error)}`,
       { bucket, key, originalError: error }
+    );
+  }
+}
+
+/**
+ * Trigger document classification after extraction is complete
+ * @param documentId Unique document identifier
+ * @param bucket S3 bucket name containing the extracted results
+ * @param key S3 key of the extracted results JSON file
+ * @param logger Logger instance
+ * @returns Promise resolving to the SQS message ID
+ */
+async function triggerDocumentClassification(
+  documentId: string, 
+  bucket: string, 
+  key: string, 
+  logger: Logger
+): Promise<string> {
+  logger.debug('Triggering document classification', { documentId, bucket, key });
+  
+  try {
+    // Construct classification message
+    const classificationMessage = {
+      documentId,
+      bucket,
+      key
+    };
+    
+    // Get the classification queue URL from environment
+    const classificationQueueUrl = process.env.SQS_CLASSIFICATION_QUEUE_URL || environment.aws.sqs.classificationQueueUrl;
+    
+    if (!classificationQueueUrl) {
+      logger.warn('Classification queue URL not configured, skipping classification trigger');
+      return '';
+    }
+    
+    const sqsService = new SQSService(classificationQueueUrl, { documentId });
+    
+    // Send message to SQS queue
+    const messageId = await sqsService.sendMessage(classificationMessage);
+    
+    logger.info('Classification job triggered successfully', { 
+      documentId, 
+      messageId,
+      queueUrl: classificationQueueUrl
+    });
+    
+    return messageId;
+  } catch (error) {
+    logger.error('Error triggering document classification', error, { 
+      documentId, 
+      bucket, 
+      key 
+    });
+    
+    throw new Error(
+      `Failed to trigger document classification: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }

@@ -8,6 +8,8 @@ import { DocumentStorage } from './document-storage';
 import { IngestionQueue } from './ingestion-queue';
 import { UploadIngestionHandler } from './upload-integestion-lambda';
 import { TextractCompletionHandler } from './textract-completion-lambda';
+import { ClassificationQueue } from './classification-queue';
+import { ClassificationLambda } from './classification-lambda';
 
 export interface DocumentProcessingStackProps extends cdk.StackProps {
   stage: string;
@@ -30,6 +32,12 @@ export class DocumentProcessingStack extends cdk.Stack {
     // Create SQS queue for document ingestion
     const ingestionQueue = new IngestionQueue(this, 'IngestionQueue', {
       queueName: `document-ingestion-${props.stage}`,
+      visibilityTimeout: cdk.Duration.seconds(300), // Match Lambda timeout
+    });
+    
+    // Create SQS queue for document classification
+    const classificationQueue = new ClassificationQueue(this, 'ClassificationQueue', {
+      queueName: `document-classification-${props.stage}`,
       visibilityTimeout: cdk.Duration.seconds(300), // Match Lambda timeout
     });
 
@@ -57,8 +65,28 @@ export class DocumentProcessingStack extends cdk.Stack {
       documentBucket: documentStorage.bucket,
       documentTable: documentTable.table,
       textractService: textractService,
+      classificationQueue: classificationQueue.queue,
     });
 
+    // Create document classification handler
+    const classificationHandler = new ClassificationLambda(this, 'ClassificationHandler', {
+      documentBucket: documentStorage.bucket,
+      classificationQueue: classificationQueue.queue,
+    });
+
+    // Export queue URLs
+    new cdk.CfnOutput(this, 'IngestionQueueUrl', {
+      value: ingestionQueue.queue.queueUrl,
+      description: 'Document Ingestion Queue URL',
+      exportName: `${props.stage}-ingestion-queue-url`,
+    });
+    
+    new cdk.CfnOutput(this, 'ClassificationQueueUrl', {
+      value: classificationQueue.queue.queueUrl,
+      description: 'Document Classification Queue URL',
+      exportName: `${props.stage}-classification-queue-url`,
+    });
+    
     // Output the API endpoint
     new cdk.CfnOutput(this, 'ApiEndpoint', {
       value: uploadIngestionHandler.api.url,

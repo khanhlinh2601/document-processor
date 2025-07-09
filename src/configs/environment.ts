@@ -23,6 +23,7 @@ export interface Config {
     sqs: {
       queueUrl: string;
       deadLetterQueueUrl: string;
+      classificationQueueUrl: string;  // Added classification queue URL
       maxRetries: number;
     };
     dynamodb: {
@@ -61,6 +62,7 @@ const configs: Record<Environment, Config> = {
       sqs: {
         queueUrl: process.env.SQS_QUEUE_URL || '',
         deadLetterQueueUrl: process.env.SQS_DLQ_URL || '',
+        classificationQueueUrl: process.env.SQS_CLASSIFICATION_QUEUE_URL || '',
         maxRetries: 3,
       },
       dynamodb: {
@@ -96,6 +98,7 @@ const configs: Record<Environment, Config> = {
       sqs: {
         queueUrl: process.env.SQS_QUEUE_URL || '',
         deadLetterQueueUrl: process.env.SQS_DLQ_URL || '',
+        classificationQueueUrl: process.env.SQS_CLASSIFICATION_QUEUE_URL || '',
         maxRetries: 1,
       },
       dynamodb: {
@@ -131,6 +134,7 @@ const configs: Record<Environment, Config> = {
       sqs: {
         queueUrl: process.env.SQS_QUEUE_URL || '',
         deadLetterQueueUrl: process.env.SQS_DLQ_URL || '',
+        classificationQueueUrl: process.env.SQS_CLASSIFICATION_QUEUE_URL || '',
         maxRetries: 3,
       },
       dynamodb: {
@@ -166,6 +170,7 @@ const configs: Record<Environment, Config> = {
       sqs: {
         queueUrl: process.env.SQS_QUEUE_URL || '',
         deadLetterQueueUrl: process.env.SQS_DLQ_URL || '',
+        classificationQueueUrl: process.env.SQS_CLASSIFICATION_QUEUE_URL || '',
         maxRetries: 5,
       },
       dynamodb: {
