@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Large File Upload Example</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 5px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .btn {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #45a049;
+    }
+    .btn:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    .progress-container {
+      margin-top: 20px;
+      display: none;
+    }
+    .progress {
+      height: 20px;
+      width: 100%;
+      background-color: #f3f3f3;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #4CAF50;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .status {
+      margin-top: 10px;
+      font-style: italic;
+    }
+    .error {
+      color: red;
+    }
+    .success {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h1>Large File Upload Example</h1>
+  <p>This example demonstrates how to upload large files directly to S3 using presigned URLs.</p>
+  
+  <div class="container">
+    <div class="form-group">
+      <label for="file">Select File:</label>
+      <input type="file" id="file" name="file" />
+    </div>
+    
+    <button id="upload-btn" class="btn">Upload File</button>
+    
+    <div id="progress-container" class="progress-container">
+      <h3>Upload Progress</h3>
+      <div class="progress">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+      <div id="status" class="status">Preparing upload...</div>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const fileInput = document.getElementById('file');
+      const uploadBtn = document.getElementById('upload-btn');
+      const progressContainer = document.getElementById('progress-container');
+      const progressBar = document.getElementById('progress-bar');
+      const statusElement = document.getElementById('status');
+      
+      // API endpoint for presigned URL
+      const API_ENDPOINT = 'https://bezkpiaqi3.execute-api.us-east-1.amazonaws.com/prod/presigned-url';
+      
+      uploadBtn.addEventListener('click', async function() {
+        if (!fileInput.files || fileInput.files.length === 0) {
+          setStatus('Please select a file first', 'error');
+          return;
+        }
+        
+        const file = fileInput.files[0];
+        uploadBtn.disabled = true;
+        progressContainer.style.display = 'block';
+        setStatus('Requesting upload URL...', '');
+        
+        try {
+          // Step 1: Get a presigned URL
+          const presignedUrlResponse = await fetch(`${API_ENDPOINT}?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`);
+          
+          if (!presignedUrlResponse.ok) {
+            throw new Error('Failed to get presigned URL');
+          }
+          
+          const presignedData = await presignedUrlResponse.json();
+          const { uploadUrl, key, bucket } = presignedData;
+          
+          setStatus('Starting upload...', '');
+          
+          // Step 2: Upload file directly to S3
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', uploadUrl);
+          xhr.setRequestHeader('Content-Type', file.type);
+          
+          // Track progress
+          xhr.upload.onprogress = function(event) {
+            if (event.lengthComputable) {
+              const percentComplete = (event.loaded / event.total) * 100;
+              progressBar.style.width = percentComplete + '%';
+              setStatus(`Uploading: ${Math.round(percentComplete)}%`, '');
+            }
+          };
+          
+          // Handle completion
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              setStatus('Upload completed successfully!', 'success');
+              console.log('File uploaded to:', bucket, key);
+            } else {
+              setStatus(`Upload failed: ${xhr.status} ${xhr.statusText}`, 'error');
+              console.error('Upload error:', xhr.status, xhr.statusText, xhr.responseText);
+            }
+            uploadBtn.disabled = false;
+          };
+          
+          // Handle errors
+          xhr.onerror = function(e) {
+            setStatus('Upload failed. Please try again.', 'error');
+            console.error('XHR error:', e);
+            uploadBtn.disabled = false;
+          };
+          
+          // Send the file
+          xhr.send(file);
+          
+        } catch (error) {
+          console.error('Error:', error);
+          setStatus(`Error: ${error.message}`, 'error');
+          uploadBtn.disabled = false;
+        }
+      });
+      
+      function setStatus(message, type) {
+        statusElement.textContent = message;
+        statusElement.className = 'status';
+        if (type) {
+          statusElement.classList.add(type);
+        }
+      }
+    });
+  </script>
+</body>
+</html> 

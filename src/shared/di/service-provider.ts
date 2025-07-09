@@ -1,10 +1,8 @@
 import { AppFactory } from './app.factory';
 import { TOKENS } from './tokens';
-import { IMessageQueueService } from '../../services/queue/message-queue.interface';
-import { IIngestionService } from '../../services/documents/ingestion.service';
-import { ITextractService } from '../../services/textract/textract.interface';
-import { ITextractNotificationService } from '../../services/textract/textract-notification.interface';
 import { LogContext, Logger } from '../logger/logger';
+import { IMessageQueueService } from 'src/services/sqs.service';
+import { IIngestionService } from 'src/services/ingestion.service';
 
 /**
  * Service provider for the application
@@ -63,42 +61,4 @@ export class ServiceProvider {
       throw error;
     }
   }
-
-  /**
-   * Get a Textract service
-   * @param logContext Logging context
-   * @returns Textract service
-   */
-  public static async getTextractService(
-    logContext?: LogContext
-  ): Promise<ITextractService> {
-    try {
-      const factory = await AppFactory.getService<
-        (logContext?: LogContext) => ITextractService
-      >(TOKENS.TEXTRACT_SERVICE);
-      return factory(logContext);
-    } catch (error) {
-      this.logger.error('Failed to get Textract service', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get a Textract notification service
-   * @param logContext Logging context
-   * @returns Textract notification service
-   */
-  public static async getTextractNotificationService(
-    logContext?: LogContext
-  ): Promise<ITextractNotificationService> {
-    try {
-      const factory = await AppFactory.getService<
-        (logContext?: LogContext) => ITextractNotificationService
-      >(TOKENS.TEXTRACT_NOTIFICATION_SERVICE);
-      return factory(logContext);
-    } catch (error) {
-      this.logger.error('Failed to get Textract notification service', error);
-      throw error;
-    }
-  }
-} 
+}

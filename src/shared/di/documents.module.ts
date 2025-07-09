@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { IngestionService } from '../../services/documents/ingestion.service';
-import { IIngestionService } from '../../services/documents/ingestion.service';
-import { IMessageQueueService } from '../../services/queue/message-queue.interface';
+import { IngestionService } from '../../services/ingestion.service';
+import { IIngestionService } from '../../services/ingestion.service';
+import { IMessageQueueService } from '../../services/sqs.service';
 import { TOKENS } from './tokens';
 import { MessageQueueModule } from './message-queue.module';
 
@@ -14,7 +14,7 @@ import { MessageQueueModule } from './message-queue.module';
     {
       provide: TOKENS.INGESTION_SERVICE,
       useFactory: () => {
-        return (messageQueueService: IMessageQueueService, logContext?: any) => {
+        return (messageQueueService: IMessageQueueService, logContext?: any) => { 
           return new IngestionService(messageQueueService, logContext);
         };
       },

@@ -1,8 +1,8 @@
 import { Container, ServiceFactory, withLogContext } from './container';
-import { SQSService } from '../../services/queue/sqs.service';
-import { IngestionService } from '../../services/documents/ingestion.service';
-import { IMessageQueueService } from '../../services/queue/message-queue.interface';
-import { IIngestionService } from '../../services/documents/ingestion.service';
+import { SQSService } from '../../services/sqs.service';
+import { IngestionService } from '../../services/ingestion.service';
+import { IMessageQueueService } from '../../services/sqs.service';
+import { IIngestionService } from '../../services/ingestion.service';
 import { Logger, LogContext } from '../logger/logger';
 
 /**

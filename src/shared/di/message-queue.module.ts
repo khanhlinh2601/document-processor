@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
-import { SQSService } from '../../services/queue/sqs.service';
-import { IMessageQueueService } from '../../services/queue/message-queue.interface';
+import { SQSService } from '../../services/sqs.service';
 import { TOKENS } from './tokens';
 
 /**

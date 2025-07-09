@@ -64,7 +64,7 @@ const configs: Record<Environment, Config> = {
         maxRetries: 3,
       },
       dynamodb: {
-        tableName: process.env.DYNAMODB_TABLE || 'document-metadata-dev',
+        tableName: process.env.DYNAMODB_TABLE || 'document-jobs-dev',
       },
       textract: {
         roleArn: process.env.TEXTRACT_ROLE_ARN || '',
@@ -99,7 +99,7 @@ const configs: Record<Environment, Config> = {
         maxRetries: 1,
       },
       dynamodb: {
-        tableName: process.env.DYNAMODB_TABLE || 'document-metadata-test',
+        tableName: process.env.DYNAMODB_TABLE || 'document-jobs-test',
       },
       textract: {
         roleArn: process.env.TEXTRACT_ROLE_ARN || '',
@@ -134,7 +134,7 @@ const configs: Record<Environment, Config> = {
         maxRetries: 3,
       },
       dynamodb: {
-        tableName: process.env.DYNAMODB_TABLE || 'document-metadata-staging',
+        tableName: process.env.DYNAMODB_TABLE || 'document-jobs-staging',
       },
       textract: {
         roleArn: process.env.TEXTRACT_ROLE_ARN || '',
