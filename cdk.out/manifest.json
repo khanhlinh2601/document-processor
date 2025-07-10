@@ -1,5 +1,5 @@
 {
-  "version": "44.0.0",
+  "version": "45.0.0",
   "artifacts": {
     "DocumentProcessing-dev.assets": {
       "type": "cdk:asset-manifest",
@@ -23,7 +23,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::519610608202:role/cdk-hnb659fds-deploy-role-519610608202-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::519610608202:role/cdk-hnb659fds-cfn-exec-role-519610608202-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-519610608202-us-east-1/1696e0e0e13463864077554722a81319f595269d96a604dc1a9944c1a5c73f75.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-519610608202-us-east-1/0e77d41edd9aa158a5961ebc806f2a2212d8a15391fe402d2c1ff9d669f860d8.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -76,6 +76,12 @@
             "data": "DocumentStorageDocumentBucketAllowBucketNotificationsToDocumentProcessingdevUploadIngestionHandlerIngestionTriggerFunction144535E38A5D68EA"
           }
         ],
+        "/DocumentProcessing-dev/DocumentStorage/DocumentBucket/Policy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentStorageDocumentBucketPolicy12AFE4F9"
+          }
+        ],
         "/DocumentProcessing-dev/DocumentJobTable/DocumentJobTable": [
           {
             "type": "aws:cdk:hasPhysicalName",
@@ -112,6 +118,18 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "ClassificationQueueADADD6EE"
+          }
+        ],
+        "/DocumentProcessing-dev/BedrockKnowledgeBaseRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BedrockKnowledgeBaseRole24C5E17B"
+          }
+        ],
+        "/DocumentProcessing-dev/BedrockKnowledgeBaseRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BedrockKnowledgeBaseRoleDefaultPolicy3434A684"
           }
         ],
         "/DocumentProcessing-dev/TextractService/TextractServiceRole/Resource": [
@@ -396,6 +414,42 @@
             "data": "TextractCompletionHandlerTextractCompletionHandlerFunctionTextractCompletionHandlerTopicE5FF7DEC"
           }
         ],
+        "/DocumentProcessing-dev/KnowledgeBase/KnowledgeBaseId": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "KnowledgeBaseKnowledgeBaseIdEA22AD9B"
+          }
+        ],
+        "/DocumentProcessing-dev/VectorSearchCollection": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "VectorSearchCollection"
+          }
+        ],
+        "/DocumentProcessing-dev/VectorSearchAccessPolicy": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "VectorSearchAccessPolicy"
+          }
+        ],
+        "/DocumentProcessing-dev/VectorSearchSecurityPolicy": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "VectorSearchSecurityPolicy"
+          }
+        ],
+        "/DocumentProcessing-dev/ClassificationHandler/BedrockKnowledgeBaseRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ClassificationHandlerBedrockKnowledgeBaseRoleA61F6254"
+          }
+        ],
+        "/DocumentProcessing-dev/ClassificationHandler/BedrockKnowledgeBaseRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ClassificationHandlerBedrockKnowledgeBaseRoleDefaultPolicy93B8D3C8"
+          }
+        ],
         "/DocumentProcessing-dev/ClassificationHandler/ClassificationFunction/ServiceRole/Resource": [
           {
             "type": "aws:cdk:logicalId",
@@ -472,5 +526,5 @@
       }
     }
   },
-  "minimumCliVersion": "2.1019.2"
+  "minimumCliVersion": "2.1020.2"
 }

@@ -9,9 +9,8 @@ import { s3Client } from '../clients/s3-client';
 import { dynamoDBClient } from '../clients/dynamodb-client';
 import { environment } from '../configs/environment';
 import { StorageError } from '../shared/errors';
-import { SendMessageCommand } from '@aws-sdk/client-sqs';
-import { sqsClient } from '../clients/sqs-client';
 import { SQSService } from '../services/sqs.service';
+import { ParsedDocument, TextractParser } from 'src/services/textract-parser.service';
 /**
  * Lambda handler for Textract job completion notifications via SNS
  */
@@ -105,9 +104,15 @@ async function processTextractCompletionHandler(record: SNSEvent['Records'][0], 
     // Store results in S3
     const resultKey = `extracted/${job.documentId}.json`;
     await storeResultsInS3(job.bucket, resultKey, textractResults, recordLogger);
-    
+
+
+    //formatted
+    const formattedResults = await formatTextractResults(job.documentId, textractResults, recordLogger);
+    const formattedResultsKey = `formatted/${job.documentId}.json`;
+    await storeResultsInS3(job.bucket, formattedResultsKey, formattedResults, recordLogger);
+
     // Trigger document classification after extraction is complete
-    await triggerDocumentClassification(job.documentId, job.bucket, resultKey, recordLogger);
+    await triggerDocumentClassification(job.documentId, job.bucket, formattedResultsKey, recordLogger);
     
     // Update job status in DynamoDB
     await jobRepository.updateJobStatus(job.jobId, DocumentProcessingStatus.EXTRACTED);
@@ -261,4 +266,40 @@ async function triggerDocumentClassification(
       `Failed to trigger document classification: ${error instanceof Error ? error.message : String(error)}`
     );
   }
+}
+
+async function formatTextractResults(documentId: string, textractResults: any, logger: Logger): Promise<any> {
+  logger.debug('Formatting Textract results', { textractResults });
+
+  // 2. Parse Textract results
+  const parser = new TextractParser({ documentId });
+  const parsedDocument = parser.parseTextractResults(textractResults);
+
+  logger.info('Document parsed successfully', {
+    documentId,
+    textLength: parsedDocument.text.length,
+    formCount: parsedDocument.forms.length,
+    tableCount: parsedDocument.tables.length
+  });
+
+  // 3. Create structured document representation
+  const documentRepresentation = createStructuredRepresentation(parsedDocument);
+
+
+  return documentRepresentation;
+}
+
+
+function createStructuredRepresentation(parsedDocument: ParsedDocument): any {
+  // Create a simplified representation that includes key information
+  return {
+    text: parsedDocument.text,
+    forms: parsedDocument.forms.map(form => ({
+      key: form.key,
+      value: form.value
+    })),
+    tables: parsedDocument.tables.map(table => ({
+      rows: table.rows
+    }))
+  };
 }

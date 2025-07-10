@@ -30,7 +30,7 @@ const initializeServices = (requestId: string) => {
   
   // Configure document processor
   const processorConfig = {
-    syncSizeThresholdBytes: 5 * 1024 * 1024, // 5MB
+    syncSizeThresholdBytes: 0.0001 * 1024 * 1024, // 100KB
     maxDocumentSizeBytes: 500 * 1024 * 1024 // 500MB
   };
   

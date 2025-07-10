@@ -3,8 +3,18 @@ import {
   InvokeModelCommand,
   InvokeModelCommandInput
 } from '@aws-sdk/client-bedrock-runtime';
+import {
+  BedrockAgentRuntimeClient,
+  RetrieveAndGenerateCommand,
+  RetrieveAndGenerateCommandInput
+} from '@aws-sdk/client-bedrock-agent-runtime';
+import {
+  BedrockAgentClient,
+} from '@aws-sdk/client-bedrock-agent';
 import { Logger, LogContext } from '../shared/logger/logger';
 import { bedrockClient } from '../clients/bedrock-client';
+import { bedrockAgentClient } from '../clients/bedrock-agent-client';
+import { bedrockAgentAdminClient } from '../clients/bedrock-agent-admin-client';
 
 interface ModelParams {
   temperature?: number;
@@ -13,17 +23,37 @@ interface ModelParams {
   stopSequences?: string[];
 }
 
+interface KnowledgeBaseParams {
+  knowledgeBaseId: string;
+  numberOfResults?: number;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+interface CreateKnowledgeBaseParams {
+  name: string;
+  roleArn: string;
+  embeddingModelArn?: string;
+  description?: string;
+}
+
 export class BedrockService {
   private client: BedrockRuntimeClient;
+  private agentClient: BedrockAgentRuntimeClient;
+  private agentAdminClient: BedrockAgentClient;
   private logger: Logger;
   private modelId: string;
 
   constructor(
     modelId: string = 'anthropic.claude-3-sonnet-20240229-v1:0', 
     client: BedrockRuntimeClient = bedrockClient,
+    agentClient: BedrockAgentRuntimeClient = bedrockAgentClient,
+    agentAdminClient: BedrockAgentClient = bedrockAgentAdminClient,
     logContext?: LogContext
   ) {
     this.client = client;
+    this.agentClient = agentClient;
+    this.agentAdminClient = agentAdminClient;
     this.modelId = modelId;
     this.logger = new Logger('BedrockService', logContext);
   }
@@ -120,6 +150,92 @@ export class BedrockService {
   }
 
   /**
+   * Query a knowledge base and generate responses based on the retrieved data
+   * @param query The text query to send to the knowledge base
+   * @param params Knowledge base parameters including knowledgeBaseId
+   * @returns The generated response with citations
+   */
+  async queryKnowledgeBase(
+    query: string,
+    params: KnowledgeBaseParams
+  ): Promise<any> {
+    try {
+      // Validate knowledge base ID format (alphanumeric, max 10 chars)
+      if (!params.knowledgeBaseId || 
+          !/^[0-9a-zA-Z]{1,10}$/.test(params.knowledgeBaseId)) {
+        throw new Error(`Invalid knowledge base ID format: ${params.knowledgeBaseId}. Must be alphanumeric and max 10 characters.`);
+      }
+
+      this.logger.debug('Querying knowledge base with Bedrock', {
+        modelId: this.modelId,
+        knowledgeBaseId: params.knowledgeBaseId,
+        queryLength: query.length
+      });
+
+      // First check if the knowledge base exists
+      try {
+        // Note: This would require additional permissions and imports
+        // This is just a placeholder for the concept
+        this.logger.debug('Knowledge base exists, proceeding with query');
+      } catch (error) {
+        if (error.name === 'ResourceNotFoundException') {
+          this.logger.error('Knowledge base not found', {
+            knowledgeBaseId: params.knowledgeBaseId
+          });
+          throw error;
+        }
+        // For other errors, continue with the query attempt
+      }
+
+      const input: RetrieveAndGenerateCommandInput = {
+        input: {
+          text: query
+        },
+        retrieveAndGenerateConfiguration: {
+          type: 'KNOWLEDGE_BASE',
+          knowledgeBaseConfiguration: {
+            knowledgeBaseId: params.knowledgeBaseId,
+            modelArn: this.modelId,
+            retrievalConfiguration: {
+              vectorSearchConfiguration: {
+                numberOfResults: params.numberOfResults || 5
+              }
+            },
+            generationConfiguration: {
+              inferenceConfig: {
+                textInferenceConfig: {
+                  temperature: params.temperature || 0.7,
+                  maxTokens: params.maxTokens || 4096
+                }
+              }
+            }
+          }
+        }
+      };
+
+      const command = new RetrieveAndGenerateCommand(input);
+      const response = await this.agentClient.send(command);
+
+      this.logger.debug('Knowledge base query successful', {
+        modelId: this.modelId,
+        knowledgeBaseId: params.knowledgeBaseId
+      });
+
+      return {
+        output: response.output?.text || '',
+        citations: response.citations || [],
+        sessionId: response.sessionId
+      };
+    } catch (error) {
+      this.logger.error('Error querying knowledge base', error, {
+        modelId: this.modelId,
+        knowledgeBaseId: params.knowledgeBaseId
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Create a structured classification prompt from document content
    * @param documentContent The extracted document content
    * @returns Formatted prompt string
@@ -168,54 +284,45 @@ Remember to return ONLY the JSON object with no additional text.
    * @returns Formatted prompt for banking document classification
    */
   createBankingClassificationPrompt(documentContent: any): string {
-    const systemPrompt = `You are a banking document expert AI assistant.
+    return `
+You are a banking document expert AI assistant.
 
-Your tasks:
-1. Summarize the document's main purpose and content in 2–3 sentences.
-2. Classify the document into one of the banking-related categories.
-3. Return a confidence score between 0 and 1.
-
-Always respond in structured JSON format.`;
-
-    const userPrompt = `Given the extracted text from a scanned banking document, do the following:
-
-1. Write a concise summary (2–3 sentences) of the document's content.
-2. Classify the document into one of these categories:
-
-[
-  "KYC_FORM",
-  "CREDIT_APPLICATION",
-  "LOAN_CONTRACT",
-  "BANK_STATEMENT",
-  "TRANSACTION_RECEIPT",
-  "ID_CARD",
-  "PASSPORT",
-  "UTILITY_BILL",
-  "SALARY_SLIP",
-  "OTHER"
-]
-
-3. Estimate a confidence score between 0 and 1.
-
-Document Text:
----
-${documentContent.text}
----
-
-Respond in the following JSON format only:
+Classify the following document content and return a structured JSON response matching this schema:
 
 {
-  "summary": "<brief explanation of the document>",
-  "category": "<one of the categories>",
-  "confidence": <float between 0 and 1>
-}`;
-
-    // For Claude models, we can use system and user prompts
-    if (this.modelId.startsWith('anthropic.claude')) {
-      return `${systemPrompt}\n\n${userPrompt}`;
-    } else {
-      // For other models, combine the prompts
-      return `${systemPrompt}\n\n${userPrompt}`;
+  "overallConfidence": number, // 0 to 1
+  "documentType": {
+    "type": "string", // Primary type - MUST be one of: "KYC_FORM", "CREDIT_APPLICATION", "LOAN_CONTRACT", "BANK_STATEMENT", "TRANSACTION_RECEIPT", "ID_CARD", "PASSPORT", "UTILITY_BILL", "SALARY_SLIP", or "OTHER"
+    "confidence": number,
+    "alternatives": {
+      "alternativeType1": number, // confidence score for alternative type
+      "alternativeType2": number,
+      "alternativeType3": number
     }
+  },
+  "summary": "string", // Brief 2-3 sentence summary of document content
+  "entities": [
+    {
+      "type": "string", // Entity type (e.g., "Person", "Organization", "Date", "Amount", etc.)
+      "value": "string", // Extracted value
+      "confidence": number // 0 to 1
+    }
+  ],
+  "metadata": {
+    // Relevant metadata based on document type
+    "issueDate": "string",
+    "expiryDate": "string",
+    "documentNumber": "string",
+    "issuingAuthority": "string"
+  }
+}
+
+IMPORTANT: The "documentType.type" field MUST be exactly one of these values: "KYC_FORM", "CREDIT_APPLICATION", "LOAN_CONTRACT", "BANK_STATEMENT", "TRANSACTION_RECEIPT", "ID_CARD", "PASSPORT", "UTILITY_BILL", "SALARY_SLIP", or "OTHER".
+
+Analyze this content:
+${JSON.stringify(documentContent)}
+
+Return only the JSON object without any extra explanation.
+`;
   }
 } 

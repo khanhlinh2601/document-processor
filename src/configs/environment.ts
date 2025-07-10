@@ -32,6 +32,10 @@ export interface Config {
     textract?: {
       roleArn: string;
     };
+    bedrock?: {
+      modelId: string;
+      knowledgeBaseId?: string;
+    };
   };
   logger: {
     level: string;
@@ -71,6 +75,10 @@ const configs: Record<Environment, Config> = {
       textract: {
         roleArn: process.env.TEXTRACT_ROLE_ARN || '',
       },
+      bedrock: {
+        modelId: process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-sonnet-20240229-v1:0',
+        knowledgeBaseId: process.env.KNOWLEDGE_BASE_ID
+      },
     },
     logger: {
       level: process.env.LOG_LEVEL || 'DEBUG',
@@ -106,6 +114,10 @@ const configs: Record<Environment, Config> = {
       },
       textract: {
         roleArn: process.env.TEXTRACT_ROLE_ARN || '',
+      },
+      bedrock: {
+        modelId: process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-sonnet-20240229-v1:0',
+        knowledgeBaseId: process.env.KNOWLEDGE_BASE_ID
       },
     },
     logger: {
@@ -143,6 +155,10 @@ const configs: Record<Environment, Config> = {
       textract: {
         roleArn: process.env.TEXTRACT_ROLE_ARN || '',
       },
+      bedrock: {
+        modelId: process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-sonnet-20240229-v1:0',
+        knowledgeBaseId: process.env.KNOWLEDGE_BASE_ID
+      },
     },
     logger: {
       level: process.env.LOG_LEVEL || 'INFO',
@@ -178,6 +194,10 @@ const configs: Record<Environment, Config> = {
       },
       textract: {
         roleArn: process.env.TEXTRACT_ROLE_ARN || '',
+      },
+      bedrock: {
+        modelId: process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-sonnet-20240229-v1:0',
+        knowledgeBaseId: process.env.KNOWLEDGE_BASE_ID
       },
     },
     logger: {

@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 import { TextractService } from './textract-service';
 import { DocumentProcessor } from './document-processor-lambda';
@@ -10,6 +11,8 @@ import { UploadIngestionHandler } from './upload-integestion-lambda';
 import { TextractCompletionHandler } from './textract-completion-lambda';
 import { ClassificationQueue } from './classification-queue';
 import { ClassificationLambda } from './classification-lambda';
+import { KnowledgeBase } from './knowledge-base';
+import * as opensearch from 'aws-cdk-lib/aws-opensearchserverless';
 
 export interface DocumentProcessingStackProps extends cdk.StackProps {
   stage: string;
@@ -41,6 +44,15 @@ export class DocumentProcessingStack extends cdk.Stack {
       visibilityTimeout: cdk.Duration.seconds(300), // Match Lambda timeout
     });
 
+    // Create IAM role for Bedrock to access resources
+    const bedrockKnowledgeBaseRole = new iam.Role(this, 'BedrockKnowledgeBaseRole', {
+      assumedBy: new iam.ServicePrincipal('bedrock.amazonaws.com'),
+      description: 'Role for Bedrock to access resources for knowledge base operations',
+    });
+
+    // Grant permissions to access S3 bucket
+    documentStorage.bucket.grantRead(bedrockKnowledgeBaseRole, 'formatted/*');
+
     // Create Textract service construct
     const textractService = new TextractService(this, 'TextractService', {
       documentBucket: documentStorage.bucket,
@@ -67,11 +79,82 @@ export class DocumentProcessingStack extends cdk.Stack {
       textractService: textractService,
       classificationQueue: classificationQueue.queue,
     });
+    
+    //create knowledge base 
+    const knowledgeBase = new KnowledgeBase(this, 'KnowledgeBase', {
+      bucket: documentStorage.bucket,
+      knowledgeBaseId: process.env.KNOWLEDGE_BASE_ID
+    });
+
+    // Create OpenSearch Serverless Collection for vector storage
+    const openSearchCollection = new opensearch.CfnCollection(this, 'VectorSearchCollection', {
+      name: `docproc-${props.stage}-vector`.toLowerCase(),
+      type: 'VECTORSEARCH',
+      description: 'OpenSearch Serverless collection for document vector embeddings',
+    });
+
+    // Create access policy for the collection
+    const openSearchAccessPolicy = new opensearch.CfnAccessPolicy(this, 'VectorSearchAccessPolicy', {
+      name: `docproc-${props.stage}-access`.toLowerCase(),
+      type: 'data',
+      description: 'Access policy for vector search collection',
+      policy: JSON.stringify([
+        {
+          Rules: [
+            {
+              ResourceType: 'collection',
+              Resource: [`collection/${openSearchCollection.name}`],
+              Permission: [
+                'aoss:CreateCollectionItems',
+                'aoss:DeleteCollectionItems',
+                'aoss:UpdateCollectionItems',
+                'aoss:DescribeCollectionItems'
+              ]
+            },
+            {
+              ResourceType: 'index',
+              Resource: [`index/${openSearchCollection.name}/*`],
+              Permission: [
+                'aoss:ReadDocument',
+                'aoss:WriteDocument',
+                'aoss:UpdateDocument',
+                'aoss:DeleteDocument'
+              ]
+            }
+          ],
+          Principal: [
+            bedrockKnowledgeBaseRole.roleArn
+          ]
+        }
+      ])
+    });
+
+    // Create security policy for the collection
+    const openSearchSecurityPolicy = new opensearch.CfnSecurityPolicy(this, 'VectorSearchSecurityPolicy', {
+      name: `docproc-${props.stage}-security`.toLowerCase(),
+      type: 'encryption',
+      description: 'Security policy for vector search collection',
+      policy: JSON.stringify({
+        Rules: [
+          {
+            ResourceType: 'collection',
+            Resource: [`collection/${openSearchCollection.name}`]
+          }
+        ],
+        AWSOwnedKey: true
+      })
+    });
+
+    // Add dependencies to ensure proper creation order
+    openSearchAccessPolicy.addDependency(openSearchCollection);
+    openSearchSecurityPolicy.addDependency(openSearchCollection);
 
     // Create document classification handler
     const classificationHandler = new ClassificationLambda(this, 'ClassificationHandler', {
       documentBucket: documentStorage.bucket,
       classificationQueue: classificationQueue.queue,
+      knowledgeBaseId: knowledgeBase.knowledgeBaseId,
+      openSearchCollectionArn: `arn:aws:aoss:${this.region}:${this.account}:collection/${openSearchCollection.name}`
     });
 
     // Export queue URLs

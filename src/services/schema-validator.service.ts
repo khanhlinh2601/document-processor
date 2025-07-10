@@ -99,32 +99,78 @@ export class SchemaValidatorService {
   getBankingClassificationSchema(): object {
     return {
       type: 'object',
-      required: ['summary', 'category', 'confidence'],
+      required: ['overallConfidence', 'documentType', 'summary'],
       properties: {
-        summary: {
-          type: 'string',
-          minLength: 1,
-        },
-        category: {
-          type: 'string',
-          enum: [
-            'KYC_FORM',
-            'CREDIT_APPLICATION',
-            'LOAN_CONTRACT',
-            'BANK_STATEMENT',
-            'TRANSACTION_RECEIPT',
-            'ID_CARD',
-            'PASSPORT',
-            'UTILITY_BILL',
-            'SALARY_SLIP',
-            'OTHER'
-          ],
-        },
-        confidence: {
+        overallConfidence: {
           type: 'number',
           minimum: 0,
           maximum: 1,
         },
+        documentType: {
+          type: 'object',
+          required: ['type', 'confidence'],
+          properties: {
+            type: {
+              type: 'string',
+              enum: [
+                'KYC_FORM',
+                'CREDIT_APPLICATION',
+                'LOAN_CONTRACT',
+                'BANK_STATEMENT',
+                'TRANSACTION_RECEIPT',
+                'ID_CARD',
+                'PASSPORT',
+                'UTILITY_BILL',
+                'SALARY_SLIP',
+                'OTHER'
+              ],
+            },
+            confidence: {
+              type: 'number',
+              minimum: 0,
+              maximum: 1,
+            },
+            alternatives: {
+              type: 'object',
+              additionalProperties: {
+                type: 'number',
+                minimum: 0,
+                maximum: 1
+              }
+            }
+          }
+        },
+        summary: {
+          type: 'string',
+          minLength: 1,
+        },
+        entities: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['type', 'value', 'confidence'],
+            properties: {
+              type: {
+                type: 'string',
+                minLength: 1,
+              },
+              value: {
+                type: 'string',
+              },
+              confidence: {
+                type: 'number',
+                minimum: 0,
+                maximum: 1,
+              },
+            },
+          },
+        },
+        metadata: {
+          type: 'object',
+          additionalProperties: {
+            type: 'string'
+          }
+        }
       },
     };
   }
