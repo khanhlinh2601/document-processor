@@ -110,17 +110,8 @@ export class DocumentProcessingStack extends cdk.Stack {
                 'aoss:UpdateCollectionItems',
                 'aoss:DescribeCollectionItems'
               ]
-            },
-            {
-              ResourceType: 'index',
-              Resource: [`index/${openSearchCollection.name}/*`],
-              Permission: [
-                'aoss:ReadDocument',
-                'aoss:WriteDocument',
-                'aoss:UpdateDocument',
-                'aoss:DeleteDocument'
-              ]
             }
+            // You may omit index rules for now unless you use supported permissions.
           ],
           Principal: [
             bedrockKnowledgeBaseRole.roleArn
@@ -128,6 +119,7 @@ export class DocumentProcessingStack extends cdk.Stack {
         }
       ])
     });
+    
 
     // Create security policy for the collection
     const openSearchSecurityPolicy = new opensearch.CfnSecurityPolicy(this, 'VectorSearchSecurityPolicy', {
@@ -145,16 +137,19 @@ export class DocumentProcessingStack extends cdk.Stack {
       })
     });
 
-    // Add dependencies to ensure proper creation order
-    openSearchAccessPolicy.addDependency(openSearchCollection);
-    openSearchSecurityPolicy.addDependency(openSearchCollection);
+    // // Add dependencies to ensure proper creation order
+
+    openSearchCollection.addDependency(openSearchAccessPolicy);
+    openSearchCollection.addDependency(openSearchSecurityPolicy);
+
 
     // Create document classification handler
     const classificationHandler = new ClassificationLambda(this, 'ClassificationHandler', {
       documentBucket: documentStorage.bucket,
       classificationQueue: classificationQueue.queue,
       knowledgeBaseId: knowledgeBase.knowledgeBaseId,
-      openSearchCollectionArn: `arn:aws:aoss:${this.region}:${this.account}:collection/${openSearchCollection.name}`
+      openSearchCollectionArn: `arn:aws:aoss:${this.region}:${this.account}:collection/${openSearchCollection.name}`,
+      stage: props.stage
     });
 
     // Export queue URLs

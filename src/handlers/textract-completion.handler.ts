@@ -11,11 +11,12 @@ import { environment } from '../configs/environment';
 import { StorageError } from '../shared/errors';
 import { SQSService } from '../services/sqs.service';
 import { ParsedDocument, TextractParser } from 'src/services/textract-parser.service';
+
 /**
  * Lambda handler for Textract job completion notifications via SNS
  */
 export async function handler(event: SNSEvent, context: Context): Promise<void> {
-  const logger = new Logger('TextractCompletionHandlerHandler', { 
+  const logger = new Logger('TextractCompletionHandler', { 
     requestId: context.awsRequestId 
   });
   
@@ -31,7 +32,7 @@ export async function handler(event: SNSEvent, context: Context): Promise<void> 
   // Process each SNS notification
   for (const record of event.Records) {
     try {
-      await processTextractCompletionHandler(record, logger);
+      await processTextractCompletion(record, logger);
     } catch (error) {
       logger.error('Error processing Textract completion notification', error, {
         messageId: record.Sns.MessageId
@@ -46,7 +47,7 @@ export async function handler(event: SNSEvent, context: Context): Promise<void> 
 /**
  * Process a single Textract completion notification
  */
-async function processTextractCompletionHandler(record: SNSEvent['Records'][0], logger: Logger): Promise<void> {
+async function processTextractCompletion(record: SNSEvent['Records'][0], logger: Logger): Promise<void> {
   const startTime = Date.now();
   const logContext = { messageId: record.Sns.MessageId };
   const recordLogger = logger.withContext(logContext);
@@ -71,21 +72,9 @@ async function processTextractCompletionHandler(record: SNSEvent['Records'][0], 
       status: message.Status 
     });
     
-    // Initialize repository
-    const jobRepository = new DocumentJobRepository(
-      dynamoDBClient,
-      environment.aws.dynamodb.tableName,
-      { requestId: record.Sns.MessageId }
-    );
-    
     // Find job by Textract job ID
-    const jobs = await jobRepository.findJobsByTextractJobId(jobId);
-    
-    if (!jobs || jobs.length === 0) {
-      throw new TextractError('Job not found in database', { jobId });
-    }
-    
-    const job = jobs[0]; // Use the first matching job
+    const jobRepository = createJobRepository(record.Sns.MessageId);
+    const job = await findJobByTextractJobId(jobId, jobRepository, recordLogger);
     
     recordLogger.info('Found job metadata', { 
       jobId: job.jobId,
@@ -95,26 +84,25 @@ async function processTextractCompletionHandler(record: SNSEvent['Records'][0], 
       key: job.key
     });
     
-    // Determine which Textract API to call based on job features
+    // Determine if job has features (TABLES, FORMS, etc.)
     const hasFeatures = job.textractFeatures && job.textractFeatures.length > 0;
     
     // Get the complete Textract results
     const textractResults = await getTextractResults(jobId, hasFeatures, recordLogger);
     
-    // Store results in S3
-    const resultKey = `extracted/${job.documentId}.json`;
-    await storeResultsInS3(job.bucket, resultKey, textractResults, recordLogger);
+    // Store raw results in S3
+    const rawResultKey = `extracted/${job.documentId}.json`;
+    await storeResultsInS3(job.bucket, rawResultKey, textractResults, recordLogger);
 
-
-    //formatted
+    // Format and store structured results
     const formattedResults = await formatTextractResults(job.documentId, textractResults, recordLogger);
     const formattedResultsKey = `formatted/${job.documentId}.json`;
     await storeResultsInS3(job.bucket, formattedResultsKey, formattedResults, recordLogger);
 
-    // Trigger document classification after extraction is complete
+    // Trigger document classification
     await triggerDocumentClassification(job.documentId, job.bucket, formattedResultsKey, recordLogger);
     
-    // Update job status in DynamoDB
+    // Update job status
     await jobRepository.updateJobStatus(job.jobId, DocumentProcessingStatus.EXTRACTED);
     
     const duration = Date.now() - startTime;
@@ -131,6 +119,34 @@ async function processTextractCompletionHandler(record: SNSEvent['Records'][0], 
     });
     throw error;
   }
+}
+
+/**
+ * Create a job repository instance
+ */
+function createJobRepository(requestId: string): DocumentJobRepository {
+  return new DocumentJobRepository(
+    dynamoDBClient,
+    environment.aws.dynamodb.tableName,
+    { requestId }
+  );
+}
+
+/**
+ * Find a job by its Textract job ID
+ */
+async function findJobByTextractJobId(
+  textractJobId: string, 
+  jobRepository: DocumentJobRepository, 
+  logger: Logger
+): Promise<any> {
+  const jobs = await jobRepository.findJobsByTextractJobId(textractJobId);
+  
+  if (!jobs || jobs.length === 0) {
+    throw new TextractError('Job not found in database', { textractJobId });
+  }
+  
+  return jobs[0]; // Use the first matching job
 }
 
 /**
@@ -186,10 +202,10 @@ async function getTextractResults(jobId: string, hasFeatures: boolean, logger: L
 }
 
 /**
- * Store Textract results in S3
+ * Store results in S3
  */
 async function storeResultsInS3(bucket: string, key: string, results: any, logger: Logger): Promise<void> {
-  logger.debug('Storing Textract results in S3', { bucket, key });
+  logger.debug('Storing results in S3', { bucket, key });
   
   try {
     const command = new PutObjectCommand({
@@ -201,23 +217,55 @@ async function storeResultsInS3(bucket: string, key: string, results: any, logge
     
     await s3Client.send(command);
     
-    logger.info('Successfully stored Textract results in S3', { bucket, key });
+    logger.info('Successfully stored results in S3', { bucket, key });
   } catch (error) {
-    logger.error('Error storing Textract results in S3', error, { bucket, key });
+    logger.error('Error storing results in S3', error, { bucket, key });
     throw new StorageError(
-      `Failed to store Textract results: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to store results: ${error instanceof Error ? error.message : String(error)}`,
       { bucket, key, originalError: error }
     );
   }
 }
 
 /**
- * Trigger document classification after extraction is complete
- * @param documentId Unique document identifier
- * @param bucket S3 bucket name containing the extracted results
- * @param key S3 key of the extracted results JSON file
- * @param logger Logger instance
- * @returns Promise resolving to the SQS message ID
+ * Format Textract results into a structured representation
+ */
+async function formatTextractResults(documentId: string, textractResults: any, logger: Logger): Promise<any> {
+  logger.debug('Formatting Textract results', { documentId });
+
+  // Parse Textract results
+  const parser = new TextractParser({ documentId });
+  const parsedDocument = parser.parseTextractResults(textractResults);
+
+  logger.info('Document parsed successfully', {
+    documentId,
+    textLength: parsedDocument.text.length,
+    formCount: parsedDocument.forms.length,
+    tableCount: parsedDocument.tables.length
+  });
+
+  // Create structured representation
+  return createStructuredRepresentation(parsedDocument);
+}
+
+/**
+ * Create a structured representation of the parsed document
+ */
+function createStructuredRepresentation(parsedDocument: ParsedDocument): any {
+  return {
+    text: parsedDocument.text,
+    forms: parsedDocument.forms.map(form => ({
+      key: form.key,
+      value: form.value
+    })),
+    tables: parsedDocument.tables.map(table => ({
+      rows: table.rows
+    }))
+  };
+}
+
+/**
+ * Trigger document classification
  */
 async function triggerDocumentClassification(
   documentId: string, 
@@ -235,17 +283,17 @@ async function triggerDocumentClassification(
       key
     };
     
-    // Get the classification queue URL from environment
-    const classificationQueueUrl = process.env.SQS_CLASSIFICATION_QUEUE_URL || environment.aws.sqs.classificationQueueUrl;
+    // Get the classification queue URL
+    const classificationQueueUrl = process.env.SQS_CLASSIFICATION_QUEUE_URL || 
+                                  environment.aws.sqs.classificationQueueUrl;
     
     if (!classificationQueueUrl) {
       logger.warn('Classification queue URL not configured, skipping classification trigger');
       return '';
     }
     
-    const sqsService = new SQSService(classificationQueueUrl, { documentId });
-    
     // Send message to SQS queue
+    const sqsService = new SQSService(classificationQueueUrl, { documentId });
     const messageId = await sqsService.sendMessage(classificationMessage);
     
     logger.info('Classification job triggered successfully', { 
@@ -266,40 +314,4 @@ async function triggerDocumentClassification(
       `Failed to trigger document classification: ${error instanceof Error ? error.message : String(error)}`
     );
   }
-}
-
-async function formatTextractResults(documentId: string, textractResults: any, logger: Logger): Promise<any> {
-  logger.debug('Formatting Textract results', { textractResults });
-
-  // 2. Parse Textract results
-  const parser = new TextractParser({ documentId });
-  const parsedDocument = parser.parseTextractResults(textractResults);
-
-  logger.info('Document parsed successfully', {
-    documentId,
-    textLength: parsedDocument.text.length,
-    formCount: parsedDocument.forms.length,
-    tableCount: parsedDocument.tables.length
-  });
-
-  // 3. Create structured document representation
-  const documentRepresentation = createStructuredRepresentation(parsedDocument);
-
-
-  return documentRepresentation;
-}
-
-
-function createStructuredRepresentation(parsedDocument: ParsedDocument): any {
-  // Create a simplified representation that includes key information
-  return {
-    text: parsedDocument.text,
-    forms: parsedDocument.forms.map(form => ({
-      key: form.key,
-      value: form.value
-    })),
-    tables: parsedDocument.tables.map(table => ({
-      rows: table.rows
-    }))
-  };
 }

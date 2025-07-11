@@ -1,20 +1,16 @@
 import {
-  BedrockRuntimeClient,
-  InvokeModelCommand,
-  InvokeModelCommandInput
-} from '@aws-sdk/client-bedrock-runtime';
-import {
   BedrockAgentRuntimeClient,
   RetrieveAndGenerateCommand,
   RetrieveAndGenerateCommandInput
 } from '@aws-sdk/client-bedrock-agent-runtime';
 import {
-  BedrockAgentClient,
-} from '@aws-sdk/client-bedrock-agent';
-import { Logger, LogContext } from '../shared/logger/logger';
-import { bedrockClient } from '../clients/bedrock-client';
+  BedrockRuntimeClient,
+  InvokeModelCommand,
+  InvokeModelCommandInput
+} from '@aws-sdk/client-bedrock-runtime';
 import { bedrockAgentClient } from '../clients/bedrock-agent-client';
-import { bedrockAgentAdminClient } from '../clients/bedrock-agent-admin-client';
+import { bedrockClient } from '../clients/bedrock-client';
+import { LogContext, Logger } from '../shared/logger/logger';
 
 interface ModelParams {
   temperature?: number;
@@ -37,10 +33,13 @@ interface CreateKnowledgeBaseParams {
   description?: string;
 }
 
+interface ModelRequestBody {
+  [key: string]: any;
+}
+
 export class BedrockService {
   private client: BedrockRuntimeClient;
   private agentClient: BedrockAgentRuntimeClient;
-  private agentAdminClient: BedrockAgentClient;
   private logger: Logger;
   private modelId: string;
 
@@ -48,12 +47,10 @@ export class BedrockService {
     modelId: string = 'anthropic.claude-3-sonnet-20240229-v1:0', 
     client: BedrockRuntimeClient = bedrockClient,
     agentClient: BedrockAgentRuntimeClient = bedrockAgentClient,
-    agentAdminClient: BedrockAgentClient = bedrockAgentAdminClient,
     logContext?: LogContext
   ) {
     this.client = client;
     this.agentClient = agentClient;
-    this.agentAdminClient = agentAdminClient;
     this.modelId = modelId;
     this.logger = new Logger('BedrockService', logContext);
   }
@@ -67,53 +64,15 @@ export class BedrockService {
   async invokeModel(
     prompt: string,
     params: ModelParams = {}
-  ): Promise<any> {
+  ): Promise<string> {
     try {
       this.logger.debug('Invoking Bedrock model', {
         modelId: this.modelId,
         promptLength: prompt.length
       });
 
-      // Format request based on model type
-      let requestBody: any;
-
-      // Check if it's an Anthropic Claude model
-      if (this.modelId.startsWith('anthropic.claude')) {
-        requestBody = {
-          anthropic_version: 'bedrock-2023-05-31',
-          max_tokens: params.maxTokens || 4096,
-          temperature: params.temperature || 0.7,
-          top_p: params.topP || 0.9,
-          stop_sequences: params.stopSequences || [],
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: prompt
-                }
-              ]
-            }
-          ]
-        };
-      } 
-      // Check if it's an Amazon Titan model
-      else if (this.modelId.startsWith('amazon.titan')) {
-        requestBody = {
-          inputText: prompt,
-          textGenerationConfig: {
-            maxTokenCount: params.maxTokens || 4096,
-            temperature: params.temperature || 0.7,
-            topP: params.topP || 0.9,
-            stopSequences: params.stopSequences || []
-          }
-        };
-      } 
-      // Default fallback
-      else {
-        throw new Error(`Unsupported model: ${this.modelId}`);
-      }
+      // Create request body based on model type
+      const requestBody = this.createModelRequestBody(prompt, params);
 
       const input: InvokeModelCommandInput = {
         modelId: this.modelId,
@@ -133,19 +92,74 @@ export class BedrockService {
         modelId: this.modelId,
       });
 
-      // Extract and return the response content based on model type
-      if (this.modelId.startsWith('anthropic.claude')) {
-        return parsedResponse.content?.[0]?.text || '';
-      } else if (this.modelId.startsWith('amazon.titan')) {
-        return parsedResponse.results?.[0]?.outputText || '';
-      } else {
-        return parsedResponse;
-      }
+      // Extract response content based on model type
+      return this.extractModelResponse(parsedResponse);
     } catch (error) {
       this.logger.error('Error invoking Bedrock model', error, {
         modelId: this.modelId
       });
       throw error;
+    }
+  }
+
+  /**
+   * Creates the request body for the model based on model type
+   * @param prompt The text prompt to send to the model
+   * @param params Model parameters
+   * @returns Model-specific request body
+   */
+  private createModelRequestBody(prompt: string, params: ModelParams): ModelRequestBody {
+    // For Anthropic Claude models
+    if (this.modelId.startsWith('anthropic.claude')) {
+      return {
+        anthropic_version: 'bedrock-2023-05-31',
+        max_tokens: params.maxTokens || 4096,
+        temperature: params.temperature || 0.7,
+        top_p: params.topP || 0.9,
+        stop_sequences: params.stopSequences || [],
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: prompt
+              }
+            ]
+          }
+        ]
+      };
+    } 
+    // For Amazon Titan models
+    else if (this.modelId.startsWith('amazon.titan')) {
+      return {
+        inputText: prompt,
+        textGenerationConfig: {
+          maxTokenCount: params.maxTokens || 4096,
+          temperature: params.temperature || 0.7,
+          topP: params.topP || 0.9,
+          stopSequences: params.stopSequences || []
+        }
+      };
+    } 
+    // Default fallback - throw error for unsupported models
+    else {
+      throw new Error(`Unsupported model: ${this.modelId}`);
+    }
+  }
+
+  /**
+   * Extracts the response content from the model output based on model type
+   * @param parsedResponse The parsed JSON response from the model
+   * @returns Extracted response text
+   */
+  private extractModelResponse(parsedResponse: any): string {
+    if (this.modelId.startsWith('anthropic.claude')) {
+      return parsedResponse.content?.[0]?.text || '';
+    } else if (this.modelId.startsWith('amazon.titan')) {
+      return parsedResponse.results?.[0]?.outputText || '';
+    } else {
+      return JSON.stringify(parsedResponse);
     }
   }
 
@@ -158,34 +172,19 @@ export class BedrockService {
   async queryKnowledgeBase(
     query: string,
     params: KnowledgeBaseParams
-  ): Promise<any> {
+  ): Promise<{
+    output: string;
+    citations: any[];
+    sessionId?: string;
+  }> {
     try {
-      // Validate knowledge base ID format (alphanumeric, max 10 chars)
-      if (!params.knowledgeBaseId || 
-          !/^[0-9a-zA-Z]{1,10}$/.test(params.knowledgeBaseId)) {
-        throw new Error(`Invalid knowledge base ID format: ${params.knowledgeBaseId}. Must be alphanumeric and max 10 characters.`);
-      }
+      this.validateKnowledgeBaseId(params.knowledgeBaseId);
 
       this.logger.debug('Querying knowledge base with Bedrock', {
         modelId: this.modelId,
         knowledgeBaseId: params.knowledgeBaseId,
         queryLength: query.length
       });
-
-      // First check if the knowledge base exists
-      try {
-        // Note: This would require additional permissions and imports
-        // This is just a placeholder for the concept
-        this.logger.debug('Knowledge base exists, proceeding with query');
-      } catch (error) {
-        if (error.name === 'ResourceNotFoundException') {
-          this.logger.error('Knowledge base not found', {
-            knowledgeBaseId: params.knowledgeBaseId
-          });
-          throw error;
-        }
-        // For other errors, continue with the query attempt
-      }
 
       const input: RetrieveAndGenerateCommandInput = {
         input: {
@@ -236,46 +235,14 @@ export class BedrockService {
   }
 
   /**
-   * Create a structured classification prompt from document content
-   * @param documentContent The extracted document content
-   * @returns Formatted prompt string
+   * Validates knowledge base ID format
+   * @param knowledgeBaseId The knowledge base ID to validate
+   * @throws Error if knowledge base ID format is invalid
    */
-  createClassificationPrompt(documentContent: any): string {
-    const prompt = `
-You are a document classification expert. Analyze the following document content and classify it into the most appropriate category.
-Return your response as a valid JSON object with the following structure:
-
-{
-  "documentType": "string", // The primary document type (e.g., "Invoice", "Receipt", "Contract", "Form", etc.)
-  "confidence": number, // Confidence score between 0 and 1
-  "metadata": {
-    // Add any relevant metadata fields based on document type
-    // For example, for an invoice, include:
-    "invoiceNumber": "string",
-    "issueDate": "string",
-    "dueDate": "string",
-    "totalAmount": "string",
-    "currency": "string",
-    "vendor": "string"
-    // For other document types, include appropriate metadata
-  },
-  "entities": [
-    // Array of entities found in the document
-    {
-      "type": "string", // Entity type (e.g., "Person", "Organization", "Date", "Amount", etc.)
-      "text": "string", // The actual text from the document
-      "confidence": number // Confidence score between 0 and 1
+  private validateKnowledgeBaseId(knowledgeBaseId: string): void {
+    if (!knowledgeBaseId || !/^[0-9a-zA-Z]+$/.test(knowledgeBaseId)) {
+      throw new Error(`Invalid knowledge base ID format: ${knowledgeBaseId}. Must be alphanumeric.`);
     }
-  ]
-}
-
-Document content:
-${JSON.stringify(documentContent)}
-
-Remember to return ONLY the JSON object with no additional text.
-`;
-
-    return prompt;
   }
 
   /**
@@ -284,6 +251,12 @@ Remember to return ONLY the JSON object with no additional text.
    * @returns Formatted prompt for banking document classification
    */
   createBankingClassificationPrompt(documentContent: any): string {
+    const documentTypes = [
+      "KYC_FORM", "CREDIT_APPLICATION", "LOAN_CONTRACT", "BANK_STATEMENT", 
+      "TRANSACTION_RECEIPT", "ID_CARD", "PASSPORT", "UTILITY_BILL", 
+      "SALARY_SLIP", "OTHER"
+    ];
+    
     return `
 You are a banking document expert AI assistant.
 
@@ -292,7 +265,7 @@ Classify the following document content and return a structured JSON response ma
 {
   "overallConfidence": number, // 0 to 1
   "documentType": {
-    "type": "string", // Primary type - MUST be one of: "KYC_FORM", "CREDIT_APPLICATION", "LOAN_CONTRACT", "BANK_STATEMENT", "TRANSACTION_RECEIPT", "ID_CARD", "PASSPORT", "UTILITY_BILL", "SALARY_SLIP", or "OTHER"
+    "type": "string", // Primary type - MUST be one of: ${documentTypes.map(t => `"${t}"`).join(", ")}
     "confidence": number,
     "alternatives": {
       "alternativeType1": number, // confidence score for alternative type
@@ -317,7 +290,7 @@ Classify the following document content and return a structured JSON response ma
   }
 }
 
-IMPORTANT: The "documentType.type" field MUST be exactly one of these values: "KYC_FORM", "CREDIT_APPLICATION", "LOAN_CONTRACT", "BANK_STATEMENT", "TRANSACTION_RECEIPT", "ID_CARD", "PASSPORT", "UTILITY_BILL", "SALARY_SLIP", or "OTHER".
+IMPORTANT: The "documentType.type" field MUST be exactly one of these values: ${documentTypes.join(", ")}.
 
 Analyze this content:
 ${JSON.stringify(documentContent)}

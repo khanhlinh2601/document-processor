@@ -34,6 +34,7 @@ export class TextractCompletionHandler extends Construct {
         DOCUMENTS_TABLE: props.documentTable.tableName,
         DOCUMENT_BUCKET: props.documentBucket.bucketName,
         SQS_CLASSIFICATION_QUEUE_URL: props.classificationQueue.queueUrl,
+        DYNAMODB_TABLE: props.documentTable.tableName, // Add this line to match environment.ts config
       },
       bundling: {
         minify: true,

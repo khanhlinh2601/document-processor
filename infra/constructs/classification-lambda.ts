@@ -13,6 +13,7 @@ export interface ClassificationLambdaProps {
   classificationQueue: sqs.Queue;
   knowledgeBaseId: string;
   openSearchCollectionArn: string;
+  stage?: string;
 }
 
 export class ClassificationLambda extends Construct {
@@ -45,7 +46,8 @@ export class ClassificationLambda extends Construct {
         FORMATTED_PREFIX: 'formatted/',
         KNOWLEDGE_BASE_ROLE_ARN: bedrockKnowledgeBaseRole.roleArn,
         EMBEDDING_MODEL_ARN: 'arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v1',
-        OPENSEARCH_COLLECTION_ARN: props.openSearchCollectionArn
+        OPENSEARCH_COLLECTION_ARN: props.openSearchCollectionArn,
+        DYNAMODB_TABLE: `document-jobs-${props.stage || process.env.STAGE || 'dev'}`
       },
       bundling: {
         minify: true,

@@ -14,16 +14,17 @@ export class KnowledgeBase extends Construct {
   constructor(scope: Construct, id: string, props: KnowledgeBaseProps) {
     super(scope, id);
 
-    // Use provided ID, environment variable, or default placeholder
-    // Ensure the ID follows AWS Bedrock constraints: alphanumeric, exactly 10 chars
+    // Use provided ID, environment variable, or generate a new one
+    // AWS Bedrock knowledge base IDs should be alphanumeric
     const providedId = props.knowledgeBaseId || process.env.KNOWLEDGE_BASE_ID;
     
-    if (providedId && /^[0-9a-zA-Z]{10}$/.test(providedId)) {
+    if (providedId && /^[0-9a-zA-Z]+$/.test(providedId)) {
       this.knowledgeBaseId = providedId;
     } else {
-      // Generate a valid 10-character alphanumeric ID if not provided or invalid
+      // Generate a valid alphanumeric ID if not provided or invalid
+      // Using a consistent format: kb + 8 random alphanumeric chars
       this.knowledgeBaseId = 'kb' + Math.random().toString(36).substring(2, 10);
-      console.warn(`Using generated knowledge base ID: ${this.knowledgeBaseId} (must be 10 chars alphanumeric)`);
+      console.warn(`Using generated knowledge base ID: ${this.knowledgeBaseId}`);
     }
 
     // Output the knowledge base ID
